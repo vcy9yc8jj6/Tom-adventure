@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#f7f4ff">
   <meta name="description" content="原创漫画任务与数学谜题的轻量冒险网站。">
   <title>土豆星事件簿 · 秘密任务</title>
-  <link rel="stylesheet" href="styles.css?v=0.3">
-  <script src="questions.js?v=0.3" defer></script>
-  <script src="variants.js?v=0.3" defer></script>
-  <script src="app.js?v=0.3" defer></script>
+  <link rel="stylesheet" href="styles.css?v=0.3.1">
+  <script src="questions.js?v=0.3.1" defer></script>
+  <script src="variants.js?v=0.3.1" defer></script>
+  <script src="app.js?v=0.3.1" defer></script>
 </head>
 <body data-theme="potato">
   <main class="shell">
@@ -23,21 +23,61 @@
         <div class="hero-art" aria-hidden="true"><span id="heroEmoji">🪐</span><div class="star one">✦</div><div class="star two">✧</div><div class="star three">✦</div></div>
         <div class="hero-copy"><p class="eyebrow">🔒 TOP SECRET · NEW INCIDENTS</p><h2 id="heroHeading">今天，宇宙又出事了……</h2><p id="heroDescription">土豆星自信满满地打开了秘密档案，结果把密码弄乱了。你愿意来帮忙吗？</p><button type="button" id="startButton" class="primary wide">接受秘密任务 <span aria-hidden="true">→</span></button><p class="subtle" id="dailyNote">每次只有几件小麻烦，解决了就收工。</p></div>
       </div>
-      <div class="card"><label for="topicSelect">阶梯专题（自愿加练）</label><select id="topicSelect"><option value="operators">外星运算</option><option value="patterns">数字暗号</option><option value="weighing">金币疑案</option><option value="pouring">水桶机关</option><option value="pursuit">环形追踪</option></select><select id="stageSelect" aria-label="阶梯难度"><option value="1">1 · 正向理解</option><option value="2">2 · 反向提问</option><option value="3">3 · 综合检查</option></select><button id="startTopic" class="secondary">开始专题三题</button></div><div class="metrics" aria-label="冒险进度"><div class="metric"><strong id="missionCount">0</strong><span>已解决事件</span></div><div class="metric"><strong id="masterCount">0</strong><span>已掌握密码</span></div><div class="metric"><strong id="pendingCount">5</strong><span>待探索领域</span></div></div>
+      <section class="quest-section" aria-labelledby="bountyTitle">
+        <div class="section-heading"><div><span class="eyebrow">WANTED · SECRET SIDE QUESTS</span><h2 id="bountyTitle">🗝️ 宇宙悬赏榜</h2><p class="subtle">挑一份神秘委托，三道机关后才知道宝箱里藏了什么……</p></div><span class="section-stamp">机密情报</span></div>
+        <div class="quest-grid" id="questGrid"></div>
+      </section>
+      <section class="unsolved-section card" aria-labelledby="unsolvedTitle">
+        <div class="section-heading"><div><span class="eyebrow">UNFINISHED CASES</span><h2 id="unsolvedTitle">🕵️ 未解决事件</h2><p class="subtle">土豆星还没找回的线索。换一组数字，再来侦查！</p></div><span class="count-bubble" id="unsolvedCount">0</span></div>
+        <div id="unsolvedList" class="unsolved-list"></div>
+      </section>
+      <div class="metrics" aria-label="冒险进度"><div class="metric"><strong id="missionCount">0</strong><span>调查过的事件</span></div><div class="metric"><strong id="masterCount">0</strong><span>真正破解的密码</span></div><div class="metric"><strong id="pendingCount">5</strong><span>等待探索的领域</span></div></div>
       <div class="home-footer"><span>🗺️ 事件会变化，冒险记录一直保留</span><button type="button" id="parentOpen" class="plain">⚙️ 家长入口</button></div>
     </section>
 
     <section id="game" class="screen hidden" aria-label="正在进行的任务">
-      <div class="game-head"><div><span class="tag" id="missionLabel">机密事件</span><p class="subtle" id="missionProgress">任务 1 / 5</p></div><button type="button" class="plain" id="exitGame">暂时离开</button></div>
+      <div class="game-head"><div><span class="tag" id="missionLabel">机密事件</span><p class="subtle" id="missionProgress">任务 1 / 5</p></div><button type="button" class="plain" id="exitGame">返回档案室</button></div>
       <div class="track" aria-hidden="true"><div id="trackFill"></div></div>
       <div class="comic" aria-label="漫画剧情"><article class="comic-panel warm"><span class="character" id="characterA">🪐</span><p id="lineA"></p></article><article class="comic-panel cool"><span class="character" id="characterB">🐻</span><p id="lineB"></p></article></div>
-      <article class="challenge"><small class="eyebrow">MISSION FILE</small><h2 id="questionTitle">挑战</h2><p class="question" id="questionText"></p><details id="formulaPanel"><summary>互动公式 · 拼好关系再随机挖空</summary><p id="formulaText"></p><label for="formulaInput">填入空格中的数</label><input id="formulaInput" inputmode="decimal"><button id="checkFormula" class="secondary">检查这一步</button><button id="newBlank" class="secondary">换一个空格</button><p id="formulaFeedback" role="status"></p></details><div id="geometryBoard" data-api="svg-board-v1" hidden></div><label for="handwork">手算过程 / 思路</label><textarea id="handwork" rows="3" placeholder="在纸上手算，再写下关键等式。独立验证需填写。"></textarea><label for="causeSelect">这一步哪里卡住了？（可选，自我记录）</label><select id="causeSelect"><option value="">还不确定</option><option>理解条件</option><option>建立关系</option><option>运算顺序</option><option>计算失误</option><option>单位或检查</option></select><label for="answerInput">输入你找到的答案</label><input id="answerInput" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" placeholder="答案是……" maxlength="80">
-        <div class="controls"><button type="button" id="submitAnswer" class="primary">提交答案</button><button type="button" id="askHint" class="secondary">💡 一点提示</button><button type="button" id="skipQuestion" class="textbutton">稍后再说</button></div>
-        <div id="answerFeedback" class="feedback hidden" role="status" aria-live="polite"></div>
-        <div class="controls"><button type="button" id="showSolution" class="secondary hidden">看看怎么解</button><button type="button" id="verifyQuestion" class="secondary hidden">换题 · 无提示独立手算验证</button><button type="button" id="nextQuestion" class="primary hidden">下一件事件 →</button></div>
+      <article class="challenge">
+        <div class="mission-topline"><small class="eyebrow">CASE FILE · <span id="stageBadge">秘密调查</span></small><span id="stageReward" class="reward-tag hidden">🎁 宝箱线索 +1</span></div>
+        <h2 id="questionTitle">挑战</h2><p class="question" id="questionText"></p>
+        <div id="readQuestionBar" class="read-question"><div class="read-prompt">📜 <strong>先读完这份密档</strong><span>想想已知什么、要查什么，再向小熊领取第一条线索。</span></div><button type="button" id="readQuestionButton" class="primary">读完了，领取线索 →</button></div>
+        <div class="answer-zone" id="answerZone">
+          <label for="answerInput">🔎 你的破解答案</label><input id="answerInput" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" placeholder="把答案写在这里" maxlength="80">
+          <label for="handwork" class="work-label">📝 你的秘密草稿 <span class="field-note">想写就写；最终独立闯关要填</span></label><textarea id="handwork" rows="2" placeholder="在纸上算也可以，写下关键的一步……"></textarea>
+          <div class="controls answer-actions"><button type="button" id="submitAnswer" class="primary">🔐 提交破解</button><button type="button" id="askHint" class="secondary">💡 求一条线索</button></div>
+          <div id="answerFeedback" class="feedback hidden" role="status" aria-live="assertive" tabindex="-1"></div>
+        </div>
+        <section id="stuckPanel" class="assist-panel hidden" aria-label="线索求助站">
+          <div class="assist-head"><span class="assist-emoji">🧭</span><div><strong>卡在什么地方啦？</strong><p class="subtle">告诉小熊，它才知道该递哪张线索卡。</p></div></div>
+          <label for="causeSelect">我想先查……</label>
+          <select id="causeSelect"><option value="">还不确定，给我一点方向</option><option value="理解条件">题目到底在说什么</option><option value="建立关系">想不出该怎么列式</option><option value="运算顺序">不知道先算哪一步</option><option value="公式理解">为什么要用这个方法</option><option value="计算失误">算出来总是不对</option><option value="单位或检查">不知道怎么检查</option></select>
+          <button type="button" id="getClue" class="secondary">打开这张线索卡 →</button>
+          <div id="clueCard" class="clue-card hidden" role="status" aria-live="polite"></div>
+        </section>
+        <section id="ideaWorkshop" class="idea-workshop hidden">
+          <h3>🧩 机关拼图：先想为什么</h3><p id="conceptWhy"></p><p id="conceptQuestion" class="concept-question"></p>
+          <div id="conceptChoices" class="concept-choices" role="group" aria-label="选择正确思路"></div>
+          <p id="conceptFeedback" class="concept-feedback" aria-live="polite"></p>
+          <button id="closeWorkshop" class="plain">收起机关拼图 ↑</button>
+        </section>
+        <div class="support-actions" id="supportActions"><button type="button" id="openWorkshop" class="soft-link">🧩 去机关工坊拼一条关系</button><button type="button" id="skipQuestion" class="soft-link">这件事先存档</button></div>
+        <section id="walkthroughPanel" class="walkthrough hidden" aria-label="一步步拆开线索">
+          <div class="walkthrough-header"><strong>📖 小熊的破案笔记</strong><button id="closeWalkthrough" class="plain">收起</button></div>
+          <div class="walkthrough-track" aria-hidden="true"><span id="walkthroughDots">● ○ ○</span></div>
+          <h3 id="walkthroughTitle"></h3><p id="walkthroughText"></p>
+          <button id="walkthroughNext" class="secondary">再看下一条 →</button>
+        </section>
+        <div class="controls post-actions"><button type="button" id="showSolution" class="secondary hidden">📖 一步步拆线索</button><button type="button" id="verifyQuestion" class="secondary hidden">⚔️ 再挑战一次</button><button type="button" id="nextQuestion" class="primary hidden">下一件事件 →</button></div>
+        <div id="geometryBoard" data-api="svg-board-v1" hidden></div>
       </article>
       <p class="subtle game-foot">提示不是作弊；没做会的谜题，以后换个方法再来。</p>
     </section>
+
+    <div id="briefingOverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="briefingTitle">
+      <div class="briefing-card"><div class="briefing-stamp">🔒 小熊递来一张秘密纸条</div><div class="briefing-avatar">🐻 🔎</div><h2 id="briefingTitle">先别急着算！</h2><p id="briefingText"></p><p class="subtle">这只是思考方向，不会告诉你答案。学过这一招后，再用新题独立证明本事！</p><button id="briefingClose" class="primary wide">收到线索，开始破案 →</button></div>
+    </div>
 
     <section id="finish" class="screen hidden"><article class="card finish-card"><span class="finish-icon">🎉</span><p class="eyebrow">MISSION COMPLETE</p><h2>今天的事件处理完啦！</h2><p id="finishText"></p><p class="subtle">土豆星去整理档案了。还没解决的谜题，下次会换一种面孔出现。</p><button type="button" id="finishHome" class="primary">返回秘密档案室</button></article></section>
 
@@ -48,7 +88,7 @@
       <h3>恢复备份</h3><p class="subtle">换设备时可手动恢复之前导出的完整备份。此操作会替换本设备现有记录。</p><label class="file-label" for="backupFile">选择备份文件（JSON）</label><input type="file" id="backupFile" accept="application/json,.json"><div class="controls"><button type="button" class="secondary" id="restoreBackup">恢复备份</button></div><p class="summary" id="toolMessage" role="status"></p>
     </article></section>
 
-    <footer class="privacy">© 土豆星事件簿 V0.3 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。本轮进度与输入会自动保存在本机；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
+    <footer class="privacy">© 土豆星事件簿 V0.3.1 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。本轮进度与输入会自动保存在本机；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
   </main>
 </body>
 </html>

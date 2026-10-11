@@ -5,3 +5,85 @@ body[data-theme=stick]{--page:#eaf5f3;--text:#183d3f;--muted:#5a7d79;--primary:#
 
 /* V0.3 touch and narrow-screen fixes */
 textarea,select,details input{font:inherit;font-size:16px;max-width:100%;padding:12px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text)}textarea{width:100%;resize:vertical}select{margin:8px 4px 12px 0}details{background:var(--soft);padding:15px;border-radius:15px;margin-bottom:20px}summary{cursor:pointer;min-height:44px;font-weight:700}button{min-height:44px}.shell{padding-bottom:max(65px,env(safe-area-inset-bottom));overflow-wrap:anywhere}.brand{min-width:0}.brand>div{min-width:0}input,textarea{scroll-margin-bottom:100px}#formulaText{white-space:pre-wrap;line-height:1.8} @media(max-width:420px){.masthead{flex-wrap:wrap}.home-footer{flex-wrap:wrap}.controls>button{flex:1 1 140px}.theme-choice{grid-template-columns:1fr}.question{font-size:18px}.masthead h1{font-size:22px}}
+
+/* V0.3.1 · 儿童友好的探险入口与递进式引导 */
+:root{--quest-ink:#302a4b}
+.quest-section{margin:25px 0 18px}
+.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.section-heading h2{font-size:clamp(21px,4.8vw,27px);margin:5px 0 2px;line-height:1.25}
+.section-heading p{margin:5px 0 0}
+.section-stamp{background:#ffedc9;color:#825314;padding:8px 10px;border:2px dashed #efc06a;border-radius:10px;font-size:12px;font-weight:900;white-space:nowrap;transform:rotate(3deg)}
+.quest-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.quest-entry{position:relative;display:flex;align-items:flex-start;gap:13px;min-width:0;min-height:152px;text-align:left;border-radius:23px;padding:19px 15px;border:2px solid #d7cbfa;box-shadow:0 5px 0 #d7cbfa;background:#f7f2ff;color:var(--quest-ink);transition:transform .15s,box-shadow .15s}
+.quest-entry:active{transform:translateY(3px);box-shadow:0 2px 0 #d7cbfa}
+.quest-entry:nth-child(2){background:#fff5d7;border-color:#f2d08a;box-shadow:0 5px 0 #f2d08a}
+.quest-entry:nth-child(3){background:#e7f8ef;border-color:#a7dcc2;box-shadow:0 5px 0 #a7dcc2}
+.quest-entry:nth-child(4){background:#e7f5ff;border-color:#a9d5ef;box-shadow:0 5px 0 #a9d5ef}
+.quest-entry:nth-child(5){background:#fff0ec;border-color:#f4c0b6;box-shadow:0 5px 0 #f4c0b6}
+.quest-icon{font-size:clamp(28px,5vw,41px);line-height:1.2;display:block;min-width:43px}
+.quest-content{display:flex;flex:1;flex-direction:column;gap:6px;min-width:0}
+.quest-kicker{font-size:11px;font-weight:850;color:#7862aa}
+.quest-content strong{font-size:clamp(16px,3.8vw,20px);line-height:1.27}
+.quest-content small{font-size:13px;line-height:1.5;color:#665d74}
+.quest-cta{font-size:13px;font-weight:850;color:#4b39aa;margin-top:auto;padding-top:6px}
+.unsolved-section{margin-top:23px;background:#fffdf6}
+.count-bubble{min-width:36px;height:36px;padding:6px 10px;display:grid;place-items:center;border-radius:999px;background:#ffcf80;font-size:18px;font-weight:900}
+.unsolved-list{display:flex;flex-wrap:wrap;gap:9px}
+.unsolved-item{flex:1 1 200px;border:1.5px solid #e6d99e;border-radius:13px;padding:12px 14px;background:#fff7da;color:#5d4620;font-size:14px;font-weight:800;text-align:left}
+.empty-cases{margin:0;line-height:1.7;color:var(--muted);font-size:14px}
+.mission-topline{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.reward-tag{padding:6px 10px;font-size:12px;font-weight:800;border-radius:30px;background:#fff1d0;color:#8b6219}
+.answer-zone{border-radius:20px;background:#fbfaff;border:1px solid var(--line);padding:18px;margin-top:10px}
+body[data-theme=stick] .answer-zone{background:#f3fcfa}
+.answer-zone label{font-size:16px}
+.work-label{margin-top:17px}
+.field-note{font-weight:500;font-size:12px;color:var(--muted)}
+#handwork{min-height:74px;font-size:16px;background:white;display:block}
+#answerInput{background:white}
+.answer-actions{margin-top:15px}
+.answer-actions>button{flex:1 1 160px}
+.feedback{border:2px solid transparent;position:relative;white-space:pre-wrap;word-break:break-word;font-size:16px;font-weight:750}
+.feedback.tryagain{border-color:#ffcd78;background:#fff3d8;color:#644713}
+.feedback.success{border-color:#9ad9ac;background:#e6f7eb;color:#215d38}
+.feedback:focus{outline:none}
+.assist-panel{margin:19px 0 16px;background:#fff5de;border:2px solid #f5dca1;border-radius:20px;padding:17px}
+.assist-head{display:flex;gap:11px;align-items:flex-start;margin-bottom:12px}
+.assist-head strong{font-size:18px}.assist-head .subtle{margin:4px 0}
+.assist-emoji{font-size:30px}.assist-panel select{width:100%;max-width:100%;margin:3px 0 13px;background:white;white-space:normal}
+.assist-panel>button{width:100%}.clue-card{margin:13px 0 0;background:#fff;border-left:5px solid #e7b34b;border-radius:12px;padding:14px;line-height:1.8;white-space:pre-wrap;font-weight:700;font-size:15px}
+.support-actions{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:14px 0 0}
+.soft-link{padding:9px 5px;background:none;color:var(--primary);font-size:14px;font-weight:850;border:0;text-align:left}
+.idea-workshop{background:#eae6ff;padding:18px;border-radius:20px;margin:18px 0;border:2px solid #cdc3fb}
+.idea-workshop h3{margin:0 0 12px}.idea-workshop p{line-height:1.8;font-size:15px}
+.concept-question{font-weight:900;font-size:17px!important}
+.concept-choices{display:flex;flex-direction:column;gap:9px}
+.concept-choice{background:white;border:2px solid #d8cef4;border-radius:12px;color:#35284b;text-align:left;padding:11px 14px;font-size:15px;min-height:48px}
+.concept-choice.correct{background:#e2f5e7;border-color:#73ba8d}.concept-choice.incorrect{background:#fff0e3;border-color:#e6bc8e}
+.concept-feedback{min-height:20px;font-weight:750}.walkthrough{border:2px solid #c7e7d4;background:#effbf3;border-radius:20px;padding:18px;margin:19px 0}
+.walkthrough-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.walkthrough-header strong{font-size:17px}.walkthrough-track{color:#19845a;letter-spacing:8px;font-weight:900;margin:15px 0 5px}
+.walkthrough h3{font-size:19px;margin:9px 0}.walkthrough p{line-height:1.8;font-size:16px;white-space:pre-wrap}.walkthrough button.secondary{width:100%}
+.post-actions>button{flex:1 1 170px}
+.modal-backdrop{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));background:rgba(22,19,46,.67);overflow-y:auto}
+.briefing-card{background:white;border-radius:27px;border:4px solid #f7dc8f;box-shadow:0 12px 0 #3a3150,0 22px 45px #0004;padding:clamp(19px,4vw,30px);width:100%;max-width:480px;max-height:95vh;overflow-y:auto;text-align:center}
+.briefing-stamp{display:inline-block;background:#fff1ce;color:#765313;padding:8px 13px;border-radius:12px;font-size:13px;font-weight:900;transform:rotate(-2deg)}
+.briefing-avatar{font-size:47px;margin:10px 0 0}.briefing-card h2{font-size:clamp(23px,6vw,29px);margin:5px 0 10px}
+.briefing-card>p:not(.subtle){font-size:clamp(17px,4.5vw,20px);text-align:left;line-height:1.9;margin:10px 0}
+.briefing-card .subtle{margin:12px 0}
+@media(max-width:580px){
+ .quest-grid{grid-template-columns:1fr 1fr;gap:10px}
+ .quest-entry{flex-direction:column;min-height:192px;padding:14px 12px;gap:6px}
+ .quest-icon{font-size:36px;min-width:unset}
+ .section-stamp{font-size:11px;padding:5px 7px}
+ .quest-content small{font-size:12px}
+ .answer-zone{padding:14px 12px}
+ .support-actions{display:block}
+ .support-actions .soft-link{display:block;width:100%;text-align:left}
+ .answer-actions>button{font-size:15px;padding:11px}
+ .challenge{padding:19px 15px}
+}
+@media(max-width:360px){.quest-grid{grid-template-columns:1fr}.quest-entry{flex-direction:row;min-height:130px}.quest-icon{font-size:33px}}
+.read-question{border:2px dashed #debd69;background:#fff8e4;border-radius:18px;margin:13px 0 21px;padding:17px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between}
+.read-prompt{display:flex;flex-direction:column;gap:4px;flex:1 1 190px;font-size:15px;line-height:1.55;color:#745321}
+.read-prompt strong{color:#4b3614;font-size:18px}
+.read-question>button{flex:1 1 180px}
