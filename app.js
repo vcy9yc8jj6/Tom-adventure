@@ -9,7 +9,7 @@ const BUILTIN = Array.isArray(window.TOM_QUESTIONS) ? window.TOM_QUESTIONS : [];
 const $ = id => document.getElementById(id);
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const addDays = (day, n) => { const d = new Date(day + 'T12:00:00'); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
-const fresh = () => ({version:2, theme:'potato', history:[], progress:{}, customBank:[], legacyHistory:[]});
+const fresh = () => ({version:2, theme:'potato', history:[], progress:{}, customBank:[], legacyHistory:[], lessons:[], journey:{coins:0,chapter:1}});
 const parse = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
 function validateQuestion(q){return !!q && typeof q.id === 'string' && /^[a-zA-Z0-9_.-]{1,90}$/.test(q.id) && typeof q.family === 'string' && /^[a-zA-Z0-9_.-]{1,90}$/.test(q.family) && !['__proto__','prototype','constructor'].includes(q.family) && typeof q.question === 'string' && q.question.length >= 4 && q.question.length <= 2000 && (['number','string'].includes(typeof q.answer) || (Array.isArray(q.answer) && q.answer.length > 0 && q.answer.length <= 10 && q.answer.every(a=>['string','number'].includes(typeof a))));}
 let state = parse(STORE);
@@ -25,6 +25,11 @@ if (!state || state.version !== 2 || !Array.isArray(state.history) || !Array.isA
 }
 state.v03=true;state.legacyHistory=Array.isArray(state.legacyHistory)?state.legacyHistory:[];
 state.customBank = state.customBank.filter(validateQuestion).slice(0,300);
+state.lessons=Array.isArray(state.lessons)?state.lessons:[];
+state.journey=state.journey&&typeof state.journey==='object'?state.journey:{coins:0,chapter:1};
+state.journey.coins=Number.isSafeInteger(state.journey.coins)?Math.max(0,state.journey.coins):0;
+state.journey.chapter=Number.isSafeInteger(state.journey.chapter)?Math.max(1,state.journey.chapter):1;
+
 const themes = {
  potato:{name:'土豆星事件簿',icon:'🪐',friend:'🐻',heading:'今天，宇宙又出事了……',description:'土豆星自信满满地打开了秘密档案，结果把密码弄乱了。你愿意来帮忙吗？'},
  stick:{name:'火柴人行动',icon:'🥷',friend:'🕵️',heading:'紧急！秘密任务已启动',description:'火柴人特工遇到了奇怪的机关。只要破解谜题，就能完成这次行动。'}
@@ -38,24 +43,54 @@ const themes = {
  };
  const basicHelp={ '理解条件':['先用自己的话说说题目告诉了什么、问了什么。'], '建立关系':['把已知的两个量写在纸上，想一想它们怎样联系。'], '运算顺序':['一步一步做，不必一次算完。'], '公式理解':['先问清楚这个关系为什么成立，再动笔套用。'], '计算失误':['核对每一个中间结果。'], '单位或检查':['把答案代回题目看看是否符合条件。'] };
  const BOUNTIES=['天降神秘悬赏','侦探密令已解锁','宝箱正在等待破译'];
+const CHAPTER_TITLES=['失踪的能量核心','奇怪的星际来信','土豆星的终极秘密'];
+const BOSS_REASONS={operators:'外星符号为什么不能当成普通乘号？你是怎样找到计算顺序的？',patterns:'为什么你能这样推算？你能说说数列中相邻两项的关系吗？',weighing:'为什么一次称重最多只能得到三种结果？怎样保证每一种情况都能查下去？',pouring:'倒完水以后，两个桶的水量为什么必须对得上？',pursuit:'为什么同向追赶要看速度差，反向相遇要看速度和？'};
+const MAP_NODES=[{icon:'🚀',name:'飞船启程'},{icon:'🔍',name:'奇怪脚印'},{icon:'🧩',name:'秘密机关'},{icon:'✨',name:'意外事件'},{icon:'👾',name:'BOSS 密令'}];
+const STORY_LINES=[
+ ['🪐：「我发明了一个绝对不会出错的密码！」','🐻：「可它刚刚把飞船门锁上了……」'],
+ ['🪐：「我侦查到脚印了！」「呃，等等，这是我的。」','🐻：「没关系，真正的线索在题目里。」'],
+ ['🪐：「这个机关我研究了半小时，刚刚才找到开关。」','🐻：「你碰到的是台灯开关。」'],
+ ['🪐：「宝箱里居然是……另一把锁？！」','🐻：「别急，再看仔细一点，问题里有钥匙。」'],
+ ['👾：「我可是宇宙第一聪明的数学魔王！」','🐻：「那你先解释，为什么上次算错了三遍？」']
+];
+const STORY_OPENINGS=[
+ `🪐 土豆星：我把能量核心藏在绝不会有人找到的地方！
+🐻 小熊：你是不是又忘了放在哪里？
+🪐 ……这叫高级安全策略！`,
+ `🐻 小熊：今天出现了一封神秘委托。
+🪐 土豆星：终于有人发现我的聪明才智了吗？
+🐻 信上写着：「请不要再碰密码机」。`,
+ `🪐 土豆星：我准备好了十种破解方案！
+🐻 小熊：先看看题目吧。
+🪐 ……那我们先收起第十一种。`
+];
+
 let active = [],position = 0,roundLog = [],current = null;
 let tries = 0, hints = 0, wrong = [], firstAnswer = null, solved = false;
 let mode='daily', verification=false, steps=[], blank=0;
+let repairFamily=null,repairFrom='home',repairCompleted=false,reasonNeeded=false;
  let briefingDismissed=false, walkthroughLevel=0, conceptUsed=false;
 let openedAt = 0, visibleSince = null, activeMillis = 0;
 const allQuestions = () => [...BUILTIN,...state.customBank];
 const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); return true; } catch { $('toolMessage').textContent='设备存储空间不足，请先导出备份。'; return false; } };
 let screenName='home';
-const screen = name => {screenName=name; ['home','game','finish','parent'].forEach(x=>$(x).classList.toggle('hidden',x!==name));};
+const screen = name => {screenName=name; ['home','game','finish','parent','workshopScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==name));};
 const norm = val => String(val).trim().toLowerCase().replace(/\s+/g,'').replace(/[，。]/g,'');
 const isCorrect = (q,v) => (Array.isArray(q.answer)?q.answer:[q.answer]).some(ans=>typeof ans==='number' && /^[-+]?\d+(?:\.\d+)?$/.test(String(v).trim()) ? Number(v)===ans : norm(ans)===norm(v));
-const skill = fam => Object.hasOwn(state.progress,fam) && state.progress[fam] && typeof state.progress[fam] === 'object' ? state.progress[fam] : {reviewStage:0, cleanDates:[],cleanVariants:[], nextDue:'',mastered:false,lastQ:null};
+const skill = fam => {
+ const v=Object.hasOwn(state.progress,fam)&&state.progress[fam]&&typeof state.progress[fam]==='object'?state.progress[fam]:{};
+ return {reviewStage:Number.isInteger(v.reviewStage)?Math.max(0,Math.min(3,v.reviewStage)):0,
+  cleanDates:Array.isArray(v.cleanDates)?v.cleanDates:[],cleanVariants:Array.isArray(v.cleanVariants)?v.cleanVariants:[],
+  nextDue:typeof v.nextDue==='string'?v.nextDue:'',mastered:!!v.mastered,lastQ:v.lastQ||null,
+  attemptCount:Number.isInteger(v.attemptCount)?v.attemptCount:0,errorCount:Number.isInteger(v.errorCount)?v.errorCount:0,
+  hintCount:Number.isInteger(v.hintCount)?v.hintCount:0,lastAttemptDate:v.lastAttemptDate||null};
+};
 function setTheme(id){state.theme = themes[id]?id:'potato'; const t=themes[state.theme];document.body.dataset.theme=state.theme;$('logo').textContent=t.icon;$('heroEmoji').textContent=t.icon;$('brandTitle').textContent=t.name;document.title=t.name+' · 秘密任务';$('heroHeading').textContent=t.heading;$('heroDescription').textContent=t.description;document.querySelectorAll('[data-skin]').forEach(b=>{b.classList.toggle('selected',b.dataset.skin===state.theme);b.setAttribute('aria-pressed',b.dataset.skin===state.theme?'true':'false')});save();}
  function unresolvedFamilies(){
   const unresolved=new Set();
   for(const r of state.history){
     if(!r||!r.family||r.status==='paused')continue;
-    if(r.verification&&r.firstCorrect&&r.status==='correct')unresolved.delete(r.family);
+    if(r.firstCorrect&&r.status==='correct')unresolved.delete(r.family);
     else if(r.status!=='correct'||r.hints>0||(Array.isArray(r.wrongAnswers)&&r.wrongAnswers.length))unresolved.add(r.family);
   }
   return [...unresolved].filter(f=>ADVENTURES[f]||allQuestions().some(q=>q.family===f));
@@ -77,22 +112,55 @@ function setTheme(id){state.theme = themes[id]?id:'potato'; const t=themes[state
   $('missionCount').textContent=state.history.filter(r=>r.status!=='paused').length;
   $('masterCount').textContent=mastered;$('pendingCount').textContent=families.length-mastered;
   $('levelTag').textContent=solvedCount>=30?'✦ 星系侦探':solvedCount>=10?'✦ 寻宝探员':'✦ 新晋探员';
-  const short=state.history.slice(-10);$('startButton').textContent=dailyDone().length<5?'开启今日秘密事件 →':'再拆三件神秘事件 →';
-  $('dailyNote').textContent=dailyDone().length<5?`今天还有 ${Math.max(0,5-dailyDone().length)} 件主线秘密事件。完成后就能休息啦。`:'🎉 今日主线已经通关！想继续，可以挑一份悬赏。';
-  $('parentStats').textContent=`V0.3.2 已完成：${solvedCount} 题；最近 ${short.length} 次尝试中，有 ${short.filter(r=>r.firstCorrect).length} 次未查看提示、首次独立答对。已掌握主题：${mastered}/${families.length}。旧版历史记录：${state.legacyHistory.length} 条（保留备份，不用于新版掌握判断）。`;
+  const short=state.history.slice(-10);$('startButton').textContent=candidates().length?'开启今日冒险 →':'🌠 探索隐藏彩蛋 →';
+  $('dailyNote').textContent=candidates().length?`还有 ${Math.min(5-dailyDone().length,candidates().length)} 件值得调查的事情，先解决重要的就好。`:'🎉 今天没有到期的旧案！想玩可以探索一件隐藏彩蛋。';
+  $('parentStats').textContent=`V0.4 已完成：${solvedCount} 题；最近 ${short.length} 次尝试中，有 ${short.filter(r=>r.firstCorrect).length} 次未查看提示、首次独立答对。已掌握主题：${mastered}/${families.length}。旧版历史记录：${state.legacyHistory.length} 条（保留备份，不用于新版掌握判断）。`;
+  renderJourneyMap();refreshRepairSignal();
   refreshAdventures();
  }
+function renderJourneyMap(){
+ const grid=$('journeyMap');grid.replaceChildren();
+ $('journeyHeading').textContent=`🗺️ 第 ${state.journey.chapter} 章 · ${CHAPTER_TITLES[(state.journey.chapter-1)%CHAPTER_TITLES.length]}`;
+ const todayDone=Math.min(5,dailyDone().length);
+ const stops=Math.max(1,Math.min(5,todayDone+candidates().filter(g=>!dailyDone().some(r=>r.family===g.family)).length));
+ const total=Math.min(5,Math.max(todayDone,stops));
+ MAP_NODES.slice(0,total||1).forEach((original,i)=>{const node=(i===total-1&&total>1)?MAP_NODES[4]:original;
+  const done=i<todayDone,now=i===todayDone;
+  const item=document.createElement('div');item.className='map-stop '+(done?'completed':now?'next':'future')+(i%2?' right':' left');
+  const button=document.createElement('button');button.type='button';button.className='map-pin';button.textContent=done?'✓':node.icon;
+  button.disabled=!now;button.setAttribute('aria-label',`${i+1} ${node.name} ${done?'已完成':now?'可以继续':'尚未开启'}`);
+  if(now)button.onclick=start;
+  const label=document.createElement('span');label.className='map-stop-label';label.textContent=done?`${node.name} · 通关`:node.name;
+  item.append(button,label);grid.append(item);
+ });
+ $('journeyProgress').textContent=`今日冒险 ${Math.min(todayDone,5)} / ${total||1} · 未到期知识不会强行出题`;
+ $('journeyNote').textContent='故事顺着走，知识点按错题和复习日期动态安排。';
+ $('coinDisplay').textContent=`🪙 ${state.journey.coins}`;
+ $('mapStart').textContent=candidates().length?'继续探险 →':'探索一段彩蛋 →';
+}
+function refreshRepairSignal(){
+ const names=Object.keys(ADVENTURES).filter(shouldOfferRepair);
+ $('repairAlert').classList.toggle('hidden',!names.length);
+ if(names.length){const a=ADVENTURES[names[0]];$('repairAlertText').textContent=`${a.icon} ${a.name} 的机关似乎老是卡住，去维修站拆开看看？（不算题）`;
+  $('homeRepairButton').onclick=()=>enterRepair(names[0],'home');
+ }
+}
 function candidates(){ const groups=new Map();for(const q of allQuestions()){if(!groups.has(q.family))groups.set(q.family,[]);groups.get(q.family).push(q)} const now=today();const ranked=[];for(const [family,qs] of groups){const p=skill(family),seen=state.history.some(h=>h.family===family);const due=!seen || !p.nextDue || p.nextDue<=now;if(!due)continue;const priority=seen?(p.mastered?30:95):65; ranked.push({family,qs,priority:priority+(p.nextDue&&p.nextDue<now?12:0),seen});}ranked.sort((a,b)=>b.priority-a.priority||a.family.localeCompare(b.family));return ranked;}
 function pickOne(qs,family){const used=state.history.filter(h=>h.family===family).map(h=>h.id);const counts=Object.fromEntries(qs.map(q=>[q.id,used.filter(id=>id===q.id).length]));const last=skill(family).lastQ;return [...qs].sort((a,b)=>(counts[a.id]-counts[b.id]) || ((a.id===last?1:0)-(b.id===last?1:0)) || ((a.level||1)-(b.level||1)) || a.id.localeCompare(b.id))[0];}
 function dailyDone(){return state.history.filter(r=>r.mode!=='topic'&&r.mode!=='free'&&!r.verification&&r.status!=='paused'&&r.timestamp&&todayOf(r.timestamp)===today());}
 function todayOf(timestamp){const d=new Date(timestamp);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function makeQuestion(g){return window.TOM_VARIANTS.families.includes(g.family)?window.TOM_VARIANTS.generate(g.family,Math.min(3,1+(skill(g.family).reviewStage||0))):pickOne(g.qs,g.family);}
-function buildRound(free=false){const groups=new Map();for(const q of allQuestions()){if(!groups.has(q.family))groups.set(q.family,[]);groups.get(q.family).push(q);}
- const due=candidates(),seen=new Set(due.map(g=>g.family));for(const [family,qs] of groups)if(!seen.has(family))due.push({family,qs});
- if(free)return due.slice(0,3).map(makeQuestion);
- const done=dailyDone(),used=new Set(done.map(r=>r.family));return due.filter(g=>!used.has(g.family)).slice(0,Math.max(0,5-done.length)).map(makeQuestion);
+function buildRound(free=false){
+ const due=candidates();
+ if(free){const optional=(due.length?due:[...new Set(allQuestions().map(q=>q.family))].map(family=>({family,qs:allQuestions().filter(q=>q.family===family)})));return optional.slice(0,1).map(g=>window.TOM_VARIANTS.families.includes(g.family)?window.TOM_VARIANTS.generate(g.family,3):pickOne(g.qs,g.family));}
+ const done=dailyDone(),used=new Set(done.map(r=>r.family));
+ const picked=due.filter(g=>!used.has(g.family)).slice(0,Math.max(0,5-done.length)).map(makeQuestion);
+ if(picked.length&&window.TOM_VARIANTS.families.includes(picked.at(-1).family)){
+   const last=picked.at(-1);picked[picked.length-1]=window.TOM_VARIANTS.generate(last.family,Math.max(2,last.level||1));
+ }
+ return picked;
 }
-function start(){mode=dailyDone().length>=5?'free':'daily';verification=false;active=buildRound(mode==='free');startRound();}
+function start(){mode='daily';verification=false;active=buildRound(false);if(!active.length){mode='free';active=buildRound(true);}startRound();}
  function startAdventure(family){
   if(!window.TOM_VARIANTS.families.includes(family))return;
   mode='topic';verification=false;
@@ -105,21 +173,20 @@ function startClock(){openedAt=Date.now();activeMillis=0;visibleSince=document.v
 function activeSeconds(){return Math.max(0,Math.round((activeMillis+(visibleSince===null?0:Date.now()-visibleSince))/1000));}
 function words(s){return state.theme==='stick'?String(s).replaceAll('土豆星','火柴人'):String(s)}
  function sceneFor(q){return ADVENTURES[q.family]||null;}
- function introFor(q){return sceneFor(q)?.intro||'这次先看清楚已知条件和要找的秘密。可以先在脑子里画一张简单的线索图，确定第一步，再开始计算。';}
+ function introFor(q){return STORY_OPENINGS[(state.journey.chapter-1)%STORY_OPENINGS.length];}
  function openBriefing(){
-   if(verification||briefingDismissed)return;
+   if(verification)return;
    $('briefingText').textContent=introFor(current);
    $('briefingOverlay').classList.remove('hidden');
    $('briefingClose').focus({preventScroll:true});
  }
  function dismissBriefing(){
-   if(briefingDismissed)return;
-   briefingDismissed=true;$('briefingOverlay').classList.add('hidden');
-   if(!verification){hints++;steps.push({kind:'intro-guidance',family:current.family,timestamp:new Date().toISOString()});}
-   $('readQuestionBar').classList.add('hidden');$('answerZone').classList.remove('hidden');$('supportActions').classList.remove('hidden');
+   briefingDismissed=true;
+   $('briefingOverlay').classList.add('hidden');
+   $('readQuestionBar').classList.add('hidden');
+   // Pure story dialogue is NOT a learning hint.
    checkpoint();
-  // Bring the answer area into view after the child closes the story clue (especially iPad landscape).
-  requestAnimationFrame(()=>$('answerZone').scrollIntoView({behavior:'smooth',block:'start'}));
+   requestAnimationFrame(()=>$('answerZone').scrollIntoView({behavior:'smooth',block:'nearest'}));
  }
  function render(){
   current=active[position];steps=[];verification=!!current.verification;tries=0;hints=0;wrong=[];firstAnswer=null;solved=false;
@@ -133,27 +200,37 @@ function words(s){return state.theme==='stick'?String(s).replaceAll('土豆星',
   $('stageReward').classList.add('hidden');
   $('trackFill').style.width=`${100*position/active.length}%`;
   $('characterA').textContent=t.icon;$('characterB').textContent=t.friend;
-  $('lineA').textContent=words(current.a||(mode==='topic'?'宝藏就藏在下一道机关后面！':'这次可是个大麻烦！'));
-  $('lineB').textContent=words(current.b||'先仔细看看线索，别急着猜答案。');
+  const narrative=mode==='daily'||mode==='free'?STORY_LINES[Math.min(position,STORY_LINES.length-1)]:[
+    [`🪐：「${adventure?.title||'新机关'}？我已经准备好庆祝了！」`,`🐻：「先把第一条线索找齐才算数！」`],
+    ['🪐：「怎么还有第二道锁？这不是欺负土豆吗！」','🐻：「换个问法，看看同一招还能不能用。」'],
+    ['👾：「宝箱最后一道门，谁都不许蒙混过关！」','🐻：「这回不用急，讲清理由更厉害。」']
+  ][Math.min(storyStage-1,2)];
+  $('lineA').textContent=words(narrative[0]);$('lineB').textContent=words(narrative[1]);
   $('questionTitle').textContent=words(verification?'奖励关 · 再破解一个新密码':mode==='topic'?['第一关 · 追踪线索','第二关 · 线索反转','第三关 · 宝箱密码'][Math.min(normalStageNumber-1,2)]:(current.title||'新的谜题'));
   $('questionText').textContent=words(current.question);
+
+  reasonNeeded=!verification && ((mode==='daily' && active.length>=3 && position===active.length-1)||(mode==='topic'&&normalStageNumber===3));
+  $('bossPrompt').classList.toggle('hidden',!reasonNeeded);$('bossReason').value='';
+  if(reasonNeeded)$('questionTitle').textContent='👾 BOSS · '+(current.title||'最终谜案');
+  $('bossPrompt').querySelector('p').textContent=reasonNeeded?`👾 魔王的附加追问：${BOSS_REASONS[current.family]||'你为什么这样判断？能说说自己的理由吗？'}（目前只保存解释，不会自动评分。）`:'';
+  $('bossReasonLabel').textContent=BOSS_REASONS[current.family]||'这道题为什么要这样做？用自己的话解释。';
   $('answerInput').value='';$('handwork').value='';$('causeSelect').value='';
   $('verifyQuestion').classList.add('hidden');$('askHint').classList.toggle('hidden',verification);
-  $('openWorkshop').classList.toggle('hidden',verification||!adventure);
+  $('openWorkshop').classList.toggle('hidden',verification||!adventure||!shouldOfferRepair(current.family));
   $('ideaWorkshop').classList.add('hidden');$('stuckPanel').classList.add('hidden');$('clueCard').classList.add('hidden');
   $('walkthroughPanel').classList.add('hidden');$('answerInput').disabled=false;
   ['submitAnswer','askHint','skipQuestion'].forEach(id=>$(id).disabled=false);
   $('answerFeedback').className='feedback hidden';$('showSolution').classList.add('hidden');$('nextQuestion').classList.add('hidden');
   $('nextQuestion').textContent=mode==='topic'?(position===active.length-1?'🎁 打开神秘宝箱':'🏃 再闯一关 →'):'下一件事件 →';
   $('briefingOverlay').classList.add('hidden');$('briefingText').textContent=introFor(current);
-  $('readQuestionBar').classList.toggle('hidden',verification);
+  $('readQuestionBar').classList.add('hidden');
   // The answer/action areas must never both disappear: the briefing is a guide, not a page lock.
   $('answerZone').classList.remove('hidden');
   $('supportActions').classList.remove('hidden');
   fillWorkshop();checkpoint();
-  // Offer an automatic opening clue, with a visible, clearly-labeled continue button.
-  // If the modal is unsupported, the full answer UI below stays reachable.
-  if(!verification)openBriefing();
+  // Show optional story once per day, not an educational hint.
+  // The answer UI must remain reachable if the dialog cannot open.
+  if(!verification&&position===0&&state.journey.lastIntroDay!==today()){state.journey.lastIntroDay=today();save();openBriefing();}
  }
  function feedback(txt,type=''){let box=$('answerFeedback');box.textContent=txt;box.className='feedback '+type;box.setAttribute('data-feedback',type);}
  function revealFeedback(txt,type){
@@ -161,13 +238,43 @@ function words(s){return state.theme==='stick'?String(s).replaceAll('土豆星',
   $('answerFeedback').scrollIntoView({behavior:'smooth',block:'center'});
   $('answerFeedback').focus({preventScroll:true});
  }
-function updateProgress(record){if(record.status==='paused')return;let p=skill(record.family);p.lastQ=record.id;p.lastAttemptDate=today();if(record.firstCorrect && record.verification){ if(!p.cleanDates.includes(today()))p.cleanDates.push(today());if(!p.cleanVariants.includes(record.id))p.cleanVariants.push(record.id);p.cleanDates=p.cleanDates.slice(-12);p.cleanVariants=p.cleanVariants.slice(-20);p.reviewStage=Math.min(3,p.cleanDates.length);p.mastered=p.cleanDates.length>=3 && p.cleanVariants.length>=2;p.nextDue=addDays(today(),p.mastered?14:p.reviewStage===1?1:p.reviewStage===2?3:7);}else if(!record.firstCorrect){if(record.status==='correct'&&!(record.wrongAnswers||[]).length){/* Guided success is not new mastery evidence, but also does not erase previously proven mastery. */p.nextDue=addDays(today(),p.mastered?14:1);}else{p.cleanDates=[];p.cleanVariants=[];p.reviewStage=0;p.mastered=false;p.nextDue=addDays(today(),1);}}else{p.nextDue=addDays(today(),1);}state.progress[record.family]=p;}
-function record(status){pauseClock();const e={version:3,mode,verification,question:current.question,parameters:current.params||null,steps:[...steps],handwork:$('handwork').value.trim(),id:current.id,family:current.family,topic:current.topic||'',status,firstAnswer,finalAnswer:$('answerInput').value.trim(),wrongAnswers:[...wrong],attempts:tries,hints,firstCorrect:status==='correct'&&tries===1&&hints===0,activeSeconds:activeSeconds(),timestamp:new Date().toISOString()};state.history.push(e);roundLog.push(e);updateProgress(e);save();checkpoint();return e;}
+function updateProgress(record){
+ if(record.status==='paused')return;
+ const p=skill(record.family);p.lastQ=record.id;p.lastAttemptDate=today();
+ p.attemptCount=(p.attemptCount||0)+1;
+ p.errorCount=(p.errorCount||0)+((record.wrongAnswers||[]).length||(['skipped','explained'].includes(record.status)?1:0));
+ p.hintCount=(p.hintCount||0)+(record.hints||0);
+ // Only independent first-attempt success on distinct dates advances numeric skill estimate.
+ // Free-text BOSS reasoning is unreviewed; never AI-graded or used as proof of comprehension.
+ if(record.firstCorrect){
+  if(!p.cleanDates.includes(today()))p.cleanDates.push(today());
+  if(!p.cleanVariants.includes(record.id))p.cleanVariants.push(record.id);
+  p.cleanDates=p.cleanDates.slice(-12);p.cleanVariants=p.cleanVariants.slice(-20);
+  p.reviewStage=Math.min(3,p.cleanDates.length);p.mastered=p.cleanDates.length>=3&&p.cleanVariants.length>=2;
+  p.nextDue=addDays(today(),p.mastered?14:p.reviewStage===1?1:p.reviewStage===2?3:7);
+ }else if(record.status!=='correct'||(record.wrongAnswers||[]).length){
+  p.cleanDates=[];p.cleanVariants=[];p.reviewStage=0;p.mastered=false;p.nextDue=addDays(today(),1);
+ }else if(record.status==='correct'&&!record.firstCorrect){
+  // Assisted success is valuable learning, but must not postpone review as if mastered.
+  p.mastered=false;p.reviewStage=Math.max(0,(p.reviewStage||0)-1);
+  p.cleanDates=Array.isArray(p.cleanDates)?p.cleanDates.slice(0,p.reviewStage):[];
+  p.cleanVariants=Array.isArray(p.cleanVariants)?p.cleanVariants.slice(0,p.reviewStage):[];
+  p.nextDue=addDays(today(),1);
+ }
+ state.progress[record.family]=p;
+}
+function record(status){pauseClock();const e={version:4,mode,verification,question:current.question,parameters:current.params||null,steps:[...steps],handwork:$('handwork').value.trim(),reason:reasonNeeded?$('bossReason').value.trim():'',reasonAssessment:(reasonNeeded&&$('bossReason').value.trim())?'unreviewed':null,id:current.id,family:current.family,topic:current.topic||'',status,firstAnswer,finalAnswer:$('answerInput').value.trim(),wrongAnswers:[...wrong],attempts:tries,hints,firstCorrect:status==='correct'&&tries===1&&hints===0,activeSeconds:activeSeconds(),timestamp:new Date().toISOString()};state.history.push(e);roundLog.push(e);updateProgress(e);
+ // Coins reward effort, but only once per family per day, and not for paid attempts.
+ if(status==='correct'&&e.firstCorrect&&!verification){const key=`${today()}-${e.family}`;state.journey.earnedKeys=Array.isArray(state.journey.earnedKeys)?state.journey.earnedKeys:[];if(!state.journey.earnedKeys.includes(key)){state.journey.earnedKeys.push(key);state.journey.earnedKeys=state.journey.earnedKeys.slice(-120);state.journey.coins=Math.min(9999,state.journey.coins+2);}}
+ save();checkpoint();return e;
+}
  function lock(){
   solved=true;$('answerInput').disabled=true;
   ['submitAnswer','askHint','skipQuestion'].forEach(id=>$(id).disabled=true);
   $('showSolution').classList.add('hidden');$('walkthroughPanel').classList.add('hidden');$('stuckPanel').classList.add('hidden');
-  $('nextQuestion').classList.remove('hidden');$('verifyQuestion').classList.toggle('hidden',verification);
+  $('nextQuestion').classList.remove('hidden');
+  const logged=roundLog.at(-1);
+  $('verifyQuestion').classList.toggle('hidden',verification||!!logged?.firstCorrect);
   if(mode==='topic'&&state.history.at(-1)?.status==='correct')$('stageReward').classList.remove('hidden');checkpoint();
  }
  function submit(){
@@ -183,8 +290,9 @@ function record(status){pauseClock();const e={version:3,mode,verification,questi
   if(isCorrect(current,v)){
    const independent=tries===1&&hints===0;
    record('correct');
-   const winNote=mode==='topic'&&!verification?'\n'+(['🎁 第一块藏宝图到手！土豆星开始紧张了……','🗝️ 第二道机关也开了！最后的宝箱在呼唤你！','🏆 三道机关已经全部走过！看看谁才是真正的探险家。'][Math.min(position,2)]):'';
-   revealFeedback((verification?(independent?'🎉 破解成功！这道新题没有提示也做对了。':'✅ 订正成功！这一轮有过错误，暂时不算独立掌握。'):(independent?'🎉 破案成功！没有借助线索也找到了答案。':'🎉 找到密码了！这次有线索帮助，想证明本领可以再挑战一次。'))+winNote,'success');
+   const questStep=active.slice(0,position+1).filter(q=>!q.verification).length;
+   const winNote=mode==='topic'&&!verification?'\n'+(['🎁 第一块藏宝图到手！土豆星开始紧张了……','🗝️ 第二道机关也开了！最后的宝箱在呼唤你！','🏆 三道机关终于走完了！看看谁才是真正的探险家。'][Math.min(questStep-1,2)]):'';
+   revealFeedback((verification?(independent?'🎉 破解成功！这道新题没有提示也做对了。':'✅ 订正成功！这一轮有过错误，暂时不算独立掌握。'):(independent?'🎉 破案成功！没有借助线索也找到了答案。':'🎉 找到密码了！这次有线索帮助，想证明本领可以再挑战一次。'))+winNote+(reasonNeeded&&$('bossReason').value.trim()?'\n📝 你的解释已经保存在本机档案中，目前不自动判定解释是否正确。':''),'success');
    lock();
   }else{
    wrong.push(v);
@@ -192,7 +300,7 @@ function record(status){pauseClock();const e={version:3,mode,verification,questi
       tries===1?'🔒 密码没有打开！没关系，再核对题目条件。你可以修改答案，或者告诉小熊卡在哪里。':
       '🔎 还是没有破解成功。换一种检查方法吧，小熊准备了不同方向的线索。';
    revealFeedback(response,'tryagain');
-   if(!verification){$('stuckPanel').classList.remove('hidden');if(tries>=2)$('showSolution').classList.remove('hidden');}
+   if(!verification){$('stuckPanel').classList.remove('hidden');if(tries>=2){$('showSolution').classList.remove('hidden');$('openWorkshop').classList.remove('hidden');}}
    checkpoint();
   }
  }
@@ -251,12 +359,40 @@ function record(status){pauseClock();const e={version:3,mode,verification,questi
      steps.push({kind:'concept-choice',family:current.family,choice:i,correct:ok});checkpoint();
    });c.append(b);});
  }
- function openWorkshop(){
-  if(solved||verification)return;
-  $('ideaWorkshop').classList.remove('hidden');
-  if(!conceptUsed){hints++;steps.push({kind:'workshop-open',family:current.family});conceptUsed=true;}
-  $('ideaWorkshop').scrollIntoView({behavior:'smooth',block:'center'});checkpoint();
+function shouldOfferRepair(family){
+ const attempts=state.history.filter(r=>r.family===family && r.timestamp && (Date.now()-new Date(r.timestamp).getTime())<14*86400000);
+ const failures=attempts.filter(r=>r.status==='explained'||r.status==='skipped'||(r.wrongAnswers||[]).length>0);
+ const priorLessons=state.lessons.filter(r=>r.family===family && r.timestamp && todayOf(r.timestamp)===today());
+ return failures.length>=2 && !priorLessons.length;
+}
+function enterRepair(family,from='home'){
+ if(!ADVENTURES[family])return;
+ repairFamily=family;repairFrom=from;repairCompleted=false;
+ const scene=ADVENTURES[family];$('repairTitle').textContent=`🔧 ${scene.name} · 机关维修站`;
+ $('repairConcept').textContent=scene.why;$('repairQuiz').textContent=scene.quiz;
+ $('repairFeedback').textContent='';const grid=$('repairChoices');grid.replaceChildren();
+ scene.choices.forEach((label,i)=>{const b=document.createElement('button');b.type='button';b.textContent=label;
+  b.className='repair-choice';b.onclick=()=>{
+    if(repairCompleted)return;
+    const ok=i===scene.correct;state.lessons.push({family,kind:'repair-choice',choice:i,correct:ok,timestamp:new Date().toISOString()});state.lessons=state.lessons.slice(-500);
+    if(ok){repairCompleted=true;b.classList.add('right');$('repairFeedback').textContent='🐻「机关修好了！不过这只是理解练习，真正的本领还得回到新题证明。」';}
+    else {b.classList.add('wrong');$('repairFeedback').textContent='🪐「等一下！那个零件好像装反了。看看原理，再试一次。」';}
+    save();
+  };grid.append(b);
+ });
+ if(from==='game'){
+   pauseClock();
+   if(!conceptUsed){hints++;steps.push({kind:'repair-lesson',family,timestamp:new Date().toISOString()});conceptUsed=true;}
+   checkpoint();
  }
+ $('repairDone').textContent=from==='game'?'回到这道谜题 →':'回到星际地图 →';screen('workshopScreen');
+}
+function openWorkshop(){if(solved||verification)return;enterRepair(current.family,'game');}
+function leaveRepair(){
+ const destination=repairFrom;
+ if(destination==='game'&&current){screen('game');if(visibleSince===null)visibleSince=Date.now();checkpoint();}
+ else {refresh();screen('home');}
+}
 function skip(){if(solved)return;record('skipped');next();}
  function next(){
   verification=false;position++;
@@ -268,6 +404,7 @@ function skip(){if(solved)return;record('skipped');next();}
    const solo=roundLog.filter(x=>x.firstCorrect).length;
    $('finishText').textContent=mode==='topic'?`🎁 这份悬赏的 ${main.length} 道机关都调查过啦！其中 ${mainFinished} 道成功破译。${verified?`另外，你还完成了 ${verified} 道无提示奖励验证！`:''}没解开的谜题会进“未解决事件”，以后还能回来挑战。`:
     `本轮调查了 ${roundLog.length} 件事，破解 ${finished} 件，其中 ${solo} 件是不借助提示、一次独立答对的。`;
+   if(mode==='daily'&&main.length&&state.journey.lastChapterFinish!==today()){state.journey.chapter++;state.journey.lastChapterFinish=today();save();}
    $('trackFill').style.width='100%';refresh();screen('finish');localStorage.removeItem(SESSION);
   }else render();
  }
@@ -275,7 +412,7 @@ function skip(){if(solved)return;record('skipped');next();}
 function download(data,filename){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 async function readFile(el){const file=el.files&&el.files[0];if(!file)throw Error('请先选择 JSON 文件。');if(file.size>2*1024*1024)throw Error('文件不能大于2MB。');return JSON.parse(await file.text());}
 function toolMessage(s){$('toolMessage').textContent=s;}
- $('startButton').onclick=start;$('submitAnswer').onclick=submit;
+ $('startButton').onclick=start;$('mapStart').onclick=start;$('repairBack').onclick=leaveRepair;$('repairDone').onclick=leaveRepair;$('submitAnswer').onclick=submit;
  $('askHint').onclick=askForClue;$('getClue').onclick=hint;
  $('showSolution').onclick=showWalkthrough;$('walkthroughNext').onclick=advanceWalkthrough;
  $('closeWalkthrough').onclick=()=>{$('walkthroughPanel').classList.add('hidden');checkpoint();};
@@ -290,12 +427,12 @@ function toolMessage(s){$('toolMessage').textContent=s;}
 
 $('exportAll').onclick=()=>download({...state,exportedAt:new Date().toISOString()},'tom-adventure-backup-v02.json');$('exportHistory').onclick=()=>download({version:2,history:state.history,legacyHistory:state.legacyHistory,exportedAt:new Date().toISOString()},'tom-adventure-history.json');
 $('importQuestions').onclick=async()=>{try{const data=await readFile($('questionFile'));if(!Array.isArray(data)||data.length>200||!data.length||data.some(q=>!validateQuestion(q)))throw Error('需要1～200道题，每道具备 id、family、question、answer。');const known=new Set(allQuestions().map(x=>x.id));let n=0;for(const q of data)if(!known.has(q.id)){state.customBank.push(q);known.add(q.id);n++}save();refresh();toolMessage('新增 '+n+' 道题，重复 ID 已跳过。')}catch(e){toolMessage('导入失败：'+e.message)}};
-$('restoreBackup').onclick=async()=>{try{const b=await readFile($('backupFile'));if(!b||b.version!==2||!Array.isArray(b.history)||!Array.isArray(b.customBank)||!b.progress||b.customBank.some(q=>!validateQuestion(q)))throw Error('不是有效的 V0.2 备份。');if(!confirm('恢复备份会替换本设备的现有记录。要继续吗？'))return;localStorage.removeItem(SESSION);state={...fresh(),...b,version:2,v03:true};state.customBank=state.customBank.slice(0,300);save();setTheme(state.theme);refresh();toolMessage('备份恢复完成。')}catch(e){toolMessage('恢复失败：'+e.message)}};
+$('restoreBackup').onclick=async()=>{try{const b=await readFile($('backupFile'));if(!b||b.version!==2||!Array.isArray(b.history)||!Array.isArray(b.customBank)||!b.progress||b.customBank.some(q=>!validateQuestion(q)))throw Error('不是有效的 V0.2 备份。');if(!confirm('恢复备份会替换本设备的现有记录。要继续吗？'))return;localStorage.removeItem(SESSION);state={...fresh(),...b,version:2,v03:true};state.lessons=Array.isArray(state.lessons)?state.lessons:[];state.journey=state.journey||{coins:0,chapter:1};state.customBank=state.customBank.slice(0,300);save();setTheme(state.theme);refresh();toolMessage('备份恢复完成。')}catch(e){toolMessage('恢复失败：'+e.message)}};
 document.addEventListener('visibilitychange',()=>{if(!current||solved||$('game').classList.contains('hidden'))return;if(document.visibilityState==='hidden')pauseClock();else if(visibleSince===null)visibleSince=Date.now()});
 
  function checkpoint(){
   if(screenName!=='game'||!current)return;
-  try{localStorage.setItem(SESSION,JSON.stringify({active,position,roundLog,mode,current,tries,hints,wrong,firstAnswer,solved,verification,steps,answer:$('answerInput').value,work:$('handwork').value,cause:$('causeSelect').value,seconds:activeSeconds(),briefingDismissed,walkthroughLevel,conceptUsed,stuckOpen:!$('stuckPanel').classList.contains('hidden'),workshopOpen:!$('ideaWorkshop').classList.contains('hidden')}));}
+  try{localStorage.setItem(SESSION,JSON.stringify({active,position,roundLog,mode,current,tries,hints,wrong,firstAnswer,solved,verification,steps,answer:$('answerInput').value,work:$('handwork').value,cause:$('causeSelect').value,bossReason:$('bossReason').value,seconds:activeSeconds(),briefingDismissed,walkthroughLevel,conceptUsed,stuckOpen:!$('stuckPanel').classList.contains('hidden'),workshopOpen:!$('ideaWorkshop').classList.contains('hidden')}));}
   catch{toolMessage('本轮进度保存失败，请导出记录备份。');}
  }
  $('verifyQuestion').onclick=()=>{
@@ -308,7 +445,7 @@ document.addEventListener('visibilitychange',()=>{if(!current||solved||$('game')
   if(q.question===old.question){feedback('暂时没有新的验证题，请稍后再试。');return;}
   active.splice(position+1,0,{...q,verification:true});next();
  };
- ['answerInput','handwork','causeSelect'].forEach(id=>$(id).addEventListener('input',checkpoint));
+ ['answerInput','handwork','causeSelect','bossReason'].forEach(id=>$(id).addEventListener('input',checkpoint));
 
 window.addEventListener('pagehide',checkpoint);
 setTheme(state.theme);refresh();screen('home');
@@ -317,14 +454,14 @@ setTheme(state.theme);refresh();screen('home');
   ({active,position,roundLog,mode}=resumed);screen('game');render();
   ({current,tries,hints,wrong,firstAnswer,solved,verification,steps}=resumed);
   briefingDismissed=!!resumed.briefingDismissed;walkthroughLevel=Math.max(0,Math.min(3,resumed.walkthroughLevel||0));conceptUsed=!!resumed.conceptUsed;
-  $('answerInput').value=resumed.answer||'';$('handwork').value=resumed.work||'';$('causeSelect').value=resumed.cause||'';
+  $('answerInput').value=resumed.answer||'';$('handwork').value=resumed.work||'';$('causeSelect').value=resumed.cause||'';$('bossReason').value=resumed.bossReason||'';
   activeMillis=(resumed.seconds||0)*1000;
   $('briefingOverlay').classList.add('hidden');
-  $('readQuestionBar').classList.toggle('hidden',briefingDismissed||verification);
+  $('readQuestionBar').classList.add('hidden');
   // Old saved sessions may contain an incomplete briefing state. Never restore a blank screen.
   $('answerZone').classList.remove('hidden');
   $('supportActions').classList.remove('hidden');
-  if(!briefingDismissed&&!verification&&!solved)openBriefing();
+  if(!briefingDismissed&&!verification&&!solved&&resumed.position===0&&state.journey.lastIntroDay!==today())openBriefing();
   if(resumed.stuckOpen&&!verification)$('stuckPanel').classList.remove('hidden');
   if(resumed.workshopOpen&&!verification)$('ideaWorkshop').classList.remove('hidden');
   if(solved){lock();feedback('本题已经记录好了，可以继续下一件事件。','success');}

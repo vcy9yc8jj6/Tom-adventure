@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f4ff">
   <meta name="description" content="原创漫画任务与数学谜题的轻量冒险网站。">
-  <title>土豆星事件簿 · 秘密任务</title>
-  <link rel="stylesheet" href="styles.css?v=0.3.2">
-  <script src="questions.js?v=0.3.2" defer></script>
-  <script src="variants.js?v=0.3.2" defer></script>
-  <script src="app.js?v=0.3.2" defer></script>
+  <title>土豆星事件簿 · 星际冒险</title>
+  <link rel="stylesheet" href="styles.css?v=0.4.0">
+  <script src="questions.js?v=0.4.0" defer></script>
+  <script src="variants.js?v=0.4.0" defer></script>
+  <script src="app.js?v=0.4.0" defer></script>
 </head>
 <body data-theme="potato">
   <main class="shell">
@@ -19,16 +19,24 @@
     </header>
 
     <section id="home" class="screen">
+      <section class="journey-section" aria-labelledby="journeyHeading">
+        <div class="journey-head"><div><span class="eyebrow">CHAPTER MAP · 宇宙探索航线</span><h2 id="journeyHeading">🗺️ 失踪的能量核心</h2><p class="subtle" id="journeyNote">故事顺着走，谜题会变！</p></div><span id="coinDisplay" class="coin-pill">🪙 0</span></div>
+        <div class="journey-map" id="journeyMap" aria-label="今日冒险路线"></div>
+        <div class="map-bottom"><span id="journeyProgress" class="subtle">今日进度 · 0 / 5</span><button type="button" class="primary" id="mapStart">登上探险飞船 →</button></div>
+      </section>
       <div class="hero">
         <div class="hero-art" aria-hidden="true"><span id="heroEmoji">🪐</span><div class="star one">✦</div><div class="star two">✧</div><div class="star three">✦</div></div>
-        <div class="hero-copy"><p class="eyebrow">🔒 TOP SECRET · NEW INCIDENTS</p><h2 id="heroHeading">今天，宇宙又出事了……</h2><p id="heroDescription">土豆星自信满满地打开了秘密档案，结果把密码弄乱了。你愿意来帮忙吗？</p><button type="button" id="startButton" class="primary wide">接受秘密任务 <span aria-hidden="true">→</span></button><p class="subtle" id="dailyNote">每次只有几件小麻烦，解决了就收工。</p></div>
+        <div class="hero-copy"><p class="eyebrow">🔒 TOP SECRET · NEW INCIDENTS</p><h2 id="heroHeading">今天，宇宙又出事了……</h2><p id="heroDescription">土豆星自信满满地打开了秘密档案，结果把密码弄乱了。你愿意来帮忙吗？</p><button type="button" id="startButton" class="primary wide">出发，调查秘密事件 <span aria-hidden="true">→</span></button><p class="subtle" id="dailyNote">每次只有几件小麻烦，解决了就收工。</p></div>
       </div>
+      <section class="repair-alert hidden" id="repairAlert" aria-live="polite"><span>🔧</span><div><strong>机关维修站发来求救信号！</strong><p id="repairAlertText">有个小机关总让侦探们犯迷糊。</p></div><button type="button" class="secondary" id="homeRepairButton">去看看</button></section>
+      <details class="side-quests"><summary>🎁 想探索支线悬赏？点这里展开</summary>
       <section class="quest-section" aria-labelledby="bountyTitle">
         <div class="section-heading"><div><span class="eyebrow">WANTED · SECRET SIDE QUESTS</span><h2 id="bountyTitle">🗝️ 宇宙悬赏榜</h2><p class="subtle">挑一份神秘委托，三道机关后才知道宝箱里藏了什么……</p></div><span class="section-stamp">机密情报</span></div>
         <div class="quest-grid" id="questGrid"></div>
       </section>
+      </details>
       <section class="unsolved-section card" aria-labelledby="unsolvedTitle">
-        <div class="section-heading"><div><span class="eyebrow">UNFINISHED CASES</span><h2 id="unsolvedTitle">🕵️ 未解决事件</h2><p class="subtle">土豆星还没找回的线索。换一组数字，再来侦查！</p></div><span class="count-bubble" id="unsolvedCount">0</span></div>
+        <div class="section-heading"><div><span class="eyebrow">UNFINISHED CASES</span><h2 id="unsolvedTitle">🕵️ 未解决事件</h2><p class="subtle">那些悬而未决的谜案，又留下了奇怪的脚印……</p></div><span class="count-bubble" id="unsolvedCount">0</span></div>
         <div id="unsolvedList" class="unsolved-list"></div>
       </section>
       <div class="metrics" aria-label="冒险进度"><div class="metric"><strong id="missionCount">0</strong><span>调查过的事件</span></div><div class="metric"><strong id="masterCount">0</strong><span>真正破解的密码</span></div><div class="metric"><strong id="pendingCount">5</strong><span>等待探索的领域</span></div></div>
@@ -42,10 +50,11 @@
       <article class="challenge">
         <div class="mission-topline"><small class="eyebrow">CASE FILE · <span id="stageBadge">秘密调查</span></small><span id="stageReward" class="reward-tag hidden">🎁 宝箱线索 +1</span></div>
         <h2 id="questionTitle">挑战</h2><p class="question" id="questionText"></p>
-        <div id="readQuestionBar" class="read-question"><div class="read-prompt">📜 <strong>先读完这份密档</strong><span>想想已知什么、要查什么，再向小熊领取第一条线索。</span></div><button type="button" id="readQuestionButton" class="primary">读完了，领取线索 →</button></div>
+        <div id="bossPrompt" class="boss-prompt hidden"><p>👾 <strong>魔王的附加追问：</strong>你为什么这样判断？可以用自己的话告诉它。这里会保存你的解释，但目前不会由 AI 自动评分。</p><label for="bossReason" id="bossReasonLabel">你为什么这样判断？</label><textarea id="bossReason" rows="3" maxlength="600" placeholder="我觉得……因为……"></textarea></div>
+        <div id="readQuestionBar" class="read-question"><div class="read-prompt">📜 <strong>先看任务</strong><span>需要时再看剧情；不强迫先看提示。</span></div><button type="button" id="readQuestionButton" class="primary">📜 看剧情 →</button></div>
         <div class="answer-zone" id="answerZone">
           <label for="answerInput">🔎 你的破解答案</label><input id="answerInput" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" placeholder="把答案写在这里" maxlength="80">
-          <label for="handwork" class="work-label">📝 你的秘密草稿 <span class="field-note">想写就写；最终独立闯关要填</span></label><textarea id="handwork" rows="2" placeholder="在纸上算也可以，写下关键的一步……"></textarea>
+          <label for="handwork" class="work-label">📝 你的秘密草稿 <span class="field-note">平时选填；独立验证要填</span></label><textarea id="handwork" rows="2" placeholder="在纸上算也可以，写下关键的一步……"></textarea>
           <div class="controls answer-actions"><button type="button" id="submitAnswer" class="primary">🔐 提交破解</button><button type="button" id="askHint" class="secondary">💡 求一条线索</button></div>
           <div id="answerFeedback" class="feedback hidden" role="status" aria-live="assertive" tabindex="-1"></div>
         </div>
@@ -62,7 +71,7 @@
           <p id="conceptFeedback" class="concept-feedback" aria-live="polite"></p>
           <button id="closeWorkshop" class="plain">收起机关拼图 ↑</button>
         </section>
-        <div class="support-actions" id="supportActions"><button type="button" id="openWorkshop" class="soft-link">🧩 去机关工坊拼一条关系</button><button type="button" id="skipQuestion" class="soft-link">这件事先存档</button></div>
+        <div class="support-actions" id="supportActions"><button type="button" id="openWorkshop" class="soft-link">🔧 进入机关维修站</button><button type="button" id="skipQuestion" class="soft-link">这件事先存档</button></div>
         <section id="walkthroughPanel" class="walkthrough hidden" aria-label="一步步拆开线索">
           <div class="walkthrough-header"><strong>📖 小熊的破案笔记</strong><button id="closeWalkthrough" class="plain">收起</button></div>
           <div class="walkthrough-track" aria-hidden="true"><span id="walkthroughDots">● ○ ○</span></div>
@@ -75,20 +84,27 @@
       <p class="subtle game-foot">提示不是作弊；没做会的谜题，以后换个方法再来。</p>
     </section>
 
+    <section id="workshopScreen" class="screen hidden" aria-label="机关维修站">
+      <article class="repair-room"><div class="repair-room-top"><span>🛠️ KNOWLEDGE GARAGE</span><button type="button" class="plain" id="repairBack">回到冒险 →</button></div>
+        <div class="repair-mascot">🐻 🪐</div><h2 id="repairTitle">机关维修站</h2><p class="subtle">这不是考试，只是一起拆开机关看看为什么。不会计入今日题数。</p>
+        <div class="repair-concept" id="repairConcept"></div><h3 id="repairQuiz"></h3><div id="repairChoices" class="repair-choices"></div>
+        <p id="repairFeedback" class="repair-feedback" role="status" aria-live="polite"></p><button type="button" class="primary wide" id="repairDone">修好了，继续探险 →</button>
+      </article>
+    </section>
     <div id="briefingOverlay" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="briefingTitle">
-      <div class="briefing-card"><div class="briefing-stamp">🔒 小熊递来一张秘密纸条</div><div class="briefing-avatar">🐻 🔎</div><h2 id="briefingTitle">先别急着算！</h2><p id="briefingText"></p><p class="subtle">这只是思考方向，不会告诉你答案。学过这一招后，再用新题独立证明本事！</p><button id="briefingClose" class="primary wide">收到线索，开始破案 →</button></div>
+      <div class="briefing-card"><div class="briefing-stamp">🎭 冒险故事 · 不算提示</div><div class="briefing-avatar">🐻 🔎</div><h2 id="briefingTitle">这次又发生什么啦？</h2><p id="briefingText"></p><p class="subtle">只是剧情，完全不影响独立破案判定。</p><button id="briefingClose" class="primary wide">看完啦，开始破案 →</button></div>
     </div>
 
     <section id="finish" class="screen hidden"><article class="card finish-card"><span class="finish-icon">🎉</span><p class="eyebrow">MISSION COMPLETE</p><h2>今天的事件处理完啦！</h2><p id="finishText"></p><p class="subtle">土豆星去整理档案了。还没解决的谜题，下次会换一种面孔出现。</p><button type="button" id="finishHome" class="primary">返回秘密档案室</button></article></section>
 
     <section id="parent" class="screen hidden"><article class="card parent-card"><div class="game-head"><h2>⚙️ 家长工具</h2><button type="button" id="parentClose" class="plain">返回首页</button></div><p class="safety">🔒 这是公开静态网页的演示工具，尚无家长身份验证。请勿导入真实姓名、学校、照片或其他隐私信息。</p>
       <h3>选择任务世界</h3><p class="subtle">更换外观不清除学习记录。未来可以继续添加新皮肤。</p><div class="theme-choice"><button type="button" class="theme-card" data-skin="potato">🪐 土豆星事件簿</button><button type="button" class="theme-card" data-skin="stick">🥷 火柴人行动</button></div>
-      <h3>学习记录</h3><p class="subtle">首答、提示、重试及回访间隔会被记录在本设备。停留时间仅作参考，不直接判断是否认真。</p><div class="controls"><button type="button" class="secondary" id="exportAll">导出完整备份</button><button type="button" class="secondary" id="exportHistory">仅导出练习记录</button></div><div class="summary" id="parentStats"></div>
+      <details class="advanced-tools"><summary>🗃️ 进阶管理 · 备份与题目包（平时不用管）</summary><h3>学习记录</h3><p class="subtle">首答、提示、重试及回访间隔会被记录在本设备。停留时间仅作参考，不直接判断是否认真。</p><div class="controls"><button type="button" class="secondary" id="exportAll">导出完整备份</button><button type="button" class="secondary" id="exportHistory">仅导出练习记录</button></div><div class="summary" id="parentStats"></div>
       <h3>导入新任务包</h3><p class="subtle">接受 JSON 数组，至少包含 id、family、question、answer。题目必须先由家长确认无隐私。</p><label class="file-label" for="questionFile">选择题目文件（JSON）</label><input type="file" id="questionFile" accept="application/json,.json"><div class="controls"><button type="button" class="secondary" id="importQuestions">导入题包</button></div>
-      <h3>恢复备份</h3><p class="subtle">换设备时可手动恢复之前导出的完整备份。此操作会替换本设备现有记录。</p><label class="file-label" for="backupFile">选择备份文件（JSON）</label><input type="file" id="backupFile" accept="application/json,.json"><div class="controls"><button type="button" class="secondary" id="restoreBackup">恢复备份</button></div><p class="summary" id="toolMessage" role="status"></p>
+      <h3>恢复备份</h3><p class="subtle">换设备时可手动恢复之前导出的完整备份。此操作会替换本设备现有记录。</p><label class="file-label" for="backupFile">选择备份文件（JSON）</label><input type="file" id="backupFile" accept="application/json,.json"><div class="controls"><button type="button" class="secondary" id="restoreBackup">恢复备份</button></div><p class="summary" id="toolMessage" role="status"></p></details>
     </article></section>
 
-    <footer class="privacy">© 土豆星事件簿 V0.3.2 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。本轮进度与输入会自动保存在本机；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
+    <footer class="privacy">© 土豆星事件簿 V0.4 预览版 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。本轮进度与输入会自动保存在本机；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
   </main>
 </body>
 </html>
