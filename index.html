@@ -8,6 +8,7 @@
   <title>土豆星事件簿 · 秘密任务</title>
   <link rel="stylesheet" href="styles.css">
   <script src="questions.js" defer></script>
+  <script src="variants.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body data-theme="potato">
@@ -22,7 +23,7 @@
         <div class="hero-art" aria-hidden="true"><span id="heroEmoji">🪐</span><div class="star one">✦</div><div class="star two">✧</div><div class="star three">✦</div></div>
         <div class="hero-copy"><p class="eyebrow">🔒 TOP SECRET · NEW INCIDENTS</p><h2 id="heroHeading">今天，宇宙又出事了……</h2><p id="heroDescription">土豆星自信满满地打开了秘密档案，结果把密码弄乱了。你愿意来帮忙吗？</p><button type="button" id="startButton" class="primary wide">接受秘密任务 <span aria-hidden="true">→</span></button><p class="subtle" id="dailyNote">每次只有几件小麻烦，解决了就收工。</p></div>
       </div>
-      <div class="metrics" aria-label="冒险进度"><div class="metric"><strong id="missionCount">0</strong><span>已解决事件</span></div><div class="metric"><strong id="masterCount">0</strong><span>已掌握密码</span></div><div class="metric"><strong id="pendingCount">5</strong><span>待探索领域</span></div></div>
+      <div class="card"><label for="topicSelect">阶梯专题（自愿加练）</label><select id="topicSelect"><option value="operators">外星运算</option><option value="patterns">数字暗号</option><option value="weighing">金币疑案</option><option value="pouring">水桶机关</option><option value="pursuit">环形追踪</option></select><select id="stageSelect" aria-label="阶梯难度"><option value="1">1 · 正向理解</option><option value="2">2 · 反向提问</option><option value="3">3 · 综合检查</option></select><button id="startTopic" class="secondary">开始专题三题</button></div><div class="metrics" aria-label="冒险进度"><div class="metric"><strong id="missionCount">0</strong><span>已解决事件</span></div><div class="metric"><strong id="masterCount">0</strong><span>已掌握密码</span></div><div class="metric"><strong id="pendingCount">5</strong><span>待探索领域</span></div></div>
       <div class="home-footer"><span>🗺️ 事件会变化，冒险记录一直保留</span><button type="button" id="parentOpen" class="plain">⚙️ 家长入口</button></div>
     </section>
 
@@ -30,10 +31,10 @@
       <div class="game-head"><div><span class="tag" id="missionLabel">机密事件</span><p class="subtle" id="missionProgress">任务 1 / 5</p></div><button type="button" class="plain" id="exitGame">暂时离开</button></div>
       <div class="track" aria-hidden="true"><div id="trackFill"></div></div>
       <div class="comic" aria-label="漫画剧情"><article class="comic-panel warm"><span class="character" id="characterA">🪐</span><p id="lineA"></p></article><article class="comic-panel cool"><span class="character" id="characterB">🐻</span><p id="lineB"></p></article></div>
-      <article class="challenge"><small class="eyebrow">MISSION FILE</small><h2 id="questionTitle">挑战</h2><p class="question" id="questionText"></p><label for="answerInput">输入你找到的答案</label><input id="answerInput" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" placeholder="答案是……" maxlength="80">
+      <article class="challenge"><small class="eyebrow">MISSION FILE</small><h2 id="questionTitle">挑战</h2><p class="question" id="questionText"></p><details id="formulaPanel"><summary>互动公式 · 拼好关系再随机挖空</summary><p id="formulaText"></p><label for="formulaInput">填入空格中的数</label><input id="formulaInput" inputmode="decimal"><button id="checkFormula" class="secondary">检查这一步</button><button id="newBlank" class="secondary">换一个空格</button><p id="formulaFeedback" role="status"></p></details><div id="geometryBoard" data-api="svg-board-v1" hidden></div><label for="handwork">手算过程 / 思路</label><textarea id="handwork" rows="3" placeholder="在纸上手算，再写下关键等式。独立验证需填写。"></textarea><label for="causeSelect">这一步哪里卡住了？（可选，自我记录）</label><select id="causeSelect"><option value="">还不确定</option><option>理解条件</option><option>建立关系</option><option>运算顺序</option><option>计算失误</option><option>单位或检查</option></select><label for="answerInput">输入你找到的答案</label><input id="answerInput" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" placeholder="答案是……" maxlength="80">
         <div class="controls"><button type="button" id="submitAnswer" class="primary">提交答案</button><button type="button" id="askHint" class="secondary">💡 一点提示</button><button type="button" id="skipQuestion" class="textbutton">稍后再说</button></div>
         <div id="answerFeedback" class="feedback hidden" role="status" aria-live="polite"></div>
-        <div class="controls"><button type="button" id="showSolution" class="secondary hidden">看看怎么解</button><button type="button" id="nextQuestion" class="primary hidden">下一件事件 →</button></div>
+        <div class="controls"><button type="button" id="showSolution" class="secondary hidden">看看怎么解</button><button type="button" id="verifyQuestion" class="secondary hidden">换题 · 无提示独立手算验证</button><button type="button" id="nextQuestion" class="primary hidden">下一件事件 →</button></div>
       </article>
       <p class="subtle game-foot">提示不是作弊；没做会的谜题，以后换个方法再来。</p>
     </section>
@@ -47,7 +48,7 @@
       <h3>恢复备份</h3><p class="subtle">换设备时可手动恢复之前导出的完整备份。此操作会替换本设备现有记录。</p><label class="file-label" for="backupFile">选择备份文件（JSON）</label><input type="file" id="backupFile" accept="application/json,.json"><div class="controls"><button type="button" class="secondary" id="restoreBackup">恢复备份</button></div><p class="summary" id="toolMessage" role="status"></p>
     </article></section>
 
-    <footer class="privacy">© 土豆星事件簿 V0.2 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。关闭网页不保证能保存未提交的答案；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
+    <footer class="privacy">© 土豆星事件簿 V0.3 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。本轮进度与输入会自动保存在本机；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
   </main>
 </body>
 </html>
