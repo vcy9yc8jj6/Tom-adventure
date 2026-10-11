@@ -87,3 +87,15 @@ body[data-theme=stick] .answer-zone{background:#f3fcfa}
 .read-prompt{display:flex;flex-direction:column;gap:4px;flex:1 1 190px;font-size:15px;line-height:1.55;color:#745321}
 .read-prompt strong{color:#4b3614;font-size:18px}
 .read-question>button{flex:1 1 180px}
+
+/* v0.3.2: compact landscape comics, give the actual puzzle and answer room to breathe. */
+@media (min-width:581px) and (max-height:820px) {
+  .shell{padding-top:14px}
+  .masthead{margin-bottom:10px}
+  .comic{gap:10px;margin-bottom:12px}
+  .comic-panel{min-height:90px;display:flex;align-items:center;gap:14px;padding:13px 16px}
+  .comic-panel .character{font-size:37px;margin:0;flex:0 0 auto}
+  .comic-panel p{font-size:15px}
+  .challenge{padding:22px}
+  .question{margin-bottom:15px}
+}

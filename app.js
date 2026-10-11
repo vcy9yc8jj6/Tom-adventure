@@ -79,7 +79,7 @@ function setTheme(id){state.theme = themes[id]?id:'potato'; const t=themes[state
   $('levelTag').textContent=solvedCount>=30?'✦ 星系侦探':solvedCount>=10?'✦ 寻宝探员':'✦ 新晋探员';
   const short=state.history.slice(-10);$('startButton').textContent=dailyDone().length<5?'开启今日秘密事件 →':'再拆三件神秘事件 →';
   $('dailyNote').textContent=dailyDone().length<5?`今天还有 ${Math.max(0,5-dailyDone().length)} 件主线秘密事件。完成后就能休息啦。`:'🎉 今日主线已经通关！想继续，可以挑一份悬赏。';
-  $('parentStats').textContent=`V0.3.1 已完成：${solvedCount} 题；最近 ${short.length} 次尝试中，有 ${short.filter(r=>r.firstCorrect).length} 次未查看提示、首次独立答对。已掌握主题：${mastered}/${families.length}。旧版历史记录：${state.legacyHistory.length} 条（保留备份，不用于新版掌握判断）。`;
+  $('parentStats').textContent=`V0.3.2 已完成：${solvedCount} 题；最近 ${short.length} 次尝试中，有 ${short.filter(r=>r.firstCorrect).length} 次未查看提示、首次独立答对。已掌握主题：${mastered}/${families.length}。旧版历史记录：${state.legacyHistory.length} 条（保留备份，不用于新版掌握判断）。`;
   refreshAdventures();
  }
 function candidates(){ const groups=new Map();for(const q of allQuestions()){if(!groups.has(q.family))groups.set(q.family,[]);groups.get(q.family).push(q)} const now=today();const ranked=[];for(const [family,qs] of groups){const p=skill(family),seen=state.history.some(h=>h.family===family);const due=!seen || !p.nextDue || p.nextDue<=now;if(!due)continue;const priority=seen?(p.mastered?30:95):65; ranked.push({family,qs,priority:priority+(p.nextDue&&p.nextDue<now?12:0),seen});}ranked.sort((a,b)=>b.priority-a.priority||a.family.localeCompare(b.family));return ranked;}
@@ -117,21 +117,25 @@ function words(s){return state.theme==='stick'?String(s).replaceAll('土豆星',
    briefingDismissed=true;$('briefingOverlay').classList.add('hidden');
    if(!verification){hints++;steps.push({kind:'intro-guidance',family:current.family,timestamp:new Date().toISOString()});}
    $('readQuestionBar').classList.add('hidden');$('answerZone').classList.remove('hidden');$('supportActions').classList.remove('hidden');
-   checkpoint();$('answerInput').focus({preventScroll:true});
+   checkpoint();
+  // Bring the answer area into view after the child closes the story clue (especially iPad landscape).
+  requestAnimationFrame(()=>$('answerZone').scrollIntoView({behavior:'smooth',block:'start'}));
  }
  function render(){
   current=active[position];steps=[];verification=!!current.verification;tries=0;hints=0;wrong=[];firstAnswer=null;solved=false;
   briefingDismissed=false;walkthroughLevel=0;conceptUsed=false;startClock();
   const t=themes[state.theme],adventure=sceneFor(current),storyStage=mode==='topic'?position+1:0;
   $('missionLabel').textContent=verification?'独立挑战 · 新谜题':(current.topic||'秘密谜题');
-  $('missionProgress').textContent=mode==='topic'?`宝藏调查 · 第 ${position+1} / ${active.length} 关`:`任务 ${position+1} / ${active.length}`;
-  $('stageBadge').textContent=verification?'独立通关':mode==='topic'?['先找到线索','反向追查','最后的宝箱'][Math.min(position,2)]:'今日秘密事件';
+  const normalStages=mode==='topic'?active.filter(q=>!q.verification).length:active.length;
+  const normalStageNumber=mode==='topic'?active.slice(0,position+1).filter(q=>!q.verification).length:position+1;
+  $('missionProgress').textContent=verification?`⚔️ 奖励关 · 独立验证`:(mode==='topic'?`宝藏调查 · 第 ${normalStageNumber} / ${normalStages} 关`:`任务 ${position+1} / ${active.length}`);
+  $('stageBadge').textContent=verification?'独立通关':mode==='topic'?['先找到线索','反向追查','最后的宝箱'][Math.min(normalStageNumber-1,2)]:'今日秘密事件';
   $('stageReward').classList.add('hidden');
   $('trackFill').style.width=`${100*position/active.length}%`;
   $('characterA').textContent=t.icon;$('characterB').textContent=t.friend;
   $('lineA').textContent=words(current.a||(mode==='topic'?'宝藏就藏在下一道机关后面！':'这次可是个大麻烦！'));
   $('lineB').textContent=words(current.b||'先仔细看看线索，别急着猜答案。');
-  $('questionTitle').textContent=words(mode==='topic'?['第一关 · 追踪线索','第二关 · 线索反转','第三关 · 宝箱密码'][Math.min(position,2)]:(current.title||'新的谜题'));
+  $('questionTitle').textContent=words(verification?'奖励关 · 再破解一个新密码':mode==='topic'?['第一关 · 追踪线索','第二关 · 线索反转','第三关 · 宝箱密码'][Math.min(normalStageNumber-1,2)]:(current.title||'新的谜题'));
   $('questionText').textContent=words(current.question);
   $('answerInput').value='';$('handwork').value='';$('causeSelect').value='';
   $('verifyQuestion').classList.add('hidden');$('askHint').classList.toggle('hidden',verification);
@@ -143,9 +147,13 @@ function words(s){return state.theme==='stick'?String(s).replaceAll('土豆星',
   $('nextQuestion').textContent=mode==='topic'?(position===active.length-1?'🎁 打开神秘宝箱':'🏃 再闯一关 →'):'下一件事件 →';
   $('briefingOverlay').classList.add('hidden');$('briefingText').textContent=introFor(current);
   $('readQuestionBar').classList.toggle('hidden',verification);
-  $('answerZone').classList.toggle('hidden',!verification);
-  $('supportActions').classList.toggle('hidden',!verification);
+  // The answer/action areas must never both disappear: the briefing is a guide, not a page lock.
+  $('answerZone').classList.remove('hidden');
+  $('supportActions').classList.remove('hidden');
   fillWorkshop();checkpoint();
+  // Offer an automatic opening clue, with a visible, clearly-labeled continue button.
+  // If the modal is unsupported, the full answer UI below stays reachable.
+  if(!verification)openBriefing();
  }
  function feedback(txt,type=''){let box=$('answerFeedback');box.textContent=txt;box.className='feedback '+type;box.setAttribute('data-feedback',type);}
  function revealFeedback(txt,type){
@@ -164,7 +172,7 @@ function record(status){pauseClock();const e={version:3,mode,verification,questi
  }
  function submit(){
   if(solved)return;
-  if(!briefingDismissed&&!verification){openBriefing();return;}
+  // Never reject a submission merely because the briefing state is stale.
   const v=$('answerInput').value.trim();
   if(!v){revealFeedback('✏️ 还没有收到你的破解答案。先写一个数字试试，或者求一条线索。','tryagain');return;}
   if(verification&&!$('handwork').value.trim()){
@@ -253,9 +261,12 @@ function skip(){if(solved)return;record('skipped');next();}
  function next(){
   verification=false;position++;
   if(position>=active.length){
+   const main=roundLog.filter(x=>!x.verification);
+   const verified=roundLog.filter(x=>x.verification && x.status==='correct').length;
    const finished=roundLog.filter(x=>x.status==='correct').length;
+   const mainFinished=main.filter(x=>x.status==='correct').length;
    const solo=roundLog.filter(x=>x.firstCorrect).length;
-   $('finishText').textContent=mode==='topic'?`🎁 这份悬赏的三道机关都调查过啦！其中 ${finished} 道成功破译。没解开的谜题会进“未解决事件”，以后还能回来挑战。`:
+   $('finishText').textContent=mode==='topic'?`🎁 这份悬赏的 ${main.length} 道机关都调查过啦！其中 ${mainFinished} 道成功破译。${verified?`另外，你还完成了 ${verified} 道无提示奖励验证！`:''}没解开的谜题会进“未解决事件”，以后还能回来挑战。`:
     `本轮调查了 ${roundLog.length} 件事，破解 ${finished} 件，其中 ${solo} 件是不借助提示、一次独立答对的。`;
    $('trackFill').style.width='100%';refresh();screen('finish');localStorage.removeItem(SESSION);
   }else render();
@@ -310,8 +321,10 @@ setTheme(state.theme);refresh();screen('home');
   activeMillis=(resumed.seconds||0)*1000;
   $('briefingOverlay').classList.add('hidden');
   $('readQuestionBar').classList.toggle('hidden',briefingDismissed||verification);
-  $('answerZone').classList.toggle('hidden',!briefingDismissed&&!verification);
-  $('supportActions').classList.toggle('hidden',!briefingDismissed&&!verification);
+  // Old saved sessions may contain an incomplete briefing state. Never restore a blank screen.
+  $('answerZone').classList.remove('hidden');
+  $('supportActions').classList.remove('hidden');
+  if(!briefingDismissed&&!verification&&!solved)openBriefing();
   if(resumed.stuckOpen&&!verification)$('stuckPanel').classList.remove('hidden');
   if(resumed.workshopOpen&&!verification)$('ideaWorkshop').classList.remove('hidden');
   if(solved){lock();feedback('本题已经记录好了，可以继续下一件事件。','success');}
