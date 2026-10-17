@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#f7f4ff">
   <meta name="description" content="原创漫画任务与数学谜题的轻量冒险网站。">
   <title>土豆星事件簿 · 星际冒险</title>
-  <link rel="stylesheet" href="styles.css?v=0.4.0">
-  <script src="questions.js?v=0.4.0" defer></script>
-  <script src="variants.js?v=0.4.0" defer></script>
-  <script src="app.js?v=0.4.0" defer></script>
+  <link rel="stylesheet" href="styles.css?v=0.5.0">
+  <script src="questions.js?v=0.5.0" defer></script>
+  <script src="variants.js?v=0.5.0" defer></script>
+  <script src="app.js?v=0.5.0" defer></script>
 </head>
 <body data-theme="potato">
   <main class="shell">
@@ -29,7 +29,7 @@
         <div class="hero-copy"><p class="eyebrow">🔒 TOP SECRET · NEW INCIDENTS</p><h2 id="heroHeading">今天，宇宙又出事了……</h2><p id="heroDescription">土豆星自信满满地打开了秘密档案，结果把密码弄乱了。你愿意来帮忙吗？</p><button type="button" id="startButton" class="primary wide">出发，调查秘密事件 <span aria-hidden="true">→</span></button><p class="subtle" id="dailyNote">每次只有几件小麻烦，解决了就收工。</p></div>
       </div>
       <section class="repair-alert hidden" id="repairAlert" aria-live="polite"><span>🔧</span><div><strong>机关维修站发来求救信号！</strong><p id="repairAlertText">有个小机关总让侦探们犯迷糊。</p></div><button type="button" class="secondary" id="homeRepairButton">去看看</button></section>
-      <details class="side-quests"><summary>🎁 想探索支线悬赏？点这里展开</summary>
+      <details class="side-quests"><summary>🗝️ 宇宙悬赏榜 · 查看秘密委托 →</summary>
       <section class="quest-section" aria-labelledby="bountyTitle">
         <div class="section-heading"><div><span class="eyebrow">WANTED · SECRET SIDE QUESTS</span><h2 id="bountyTitle">🗝️ 宇宙悬赏榜</h2><p class="subtle">挑一份神秘委托，三道机关后才知道宝箱里藏了什么……</p></div><span class="section-stamp">机密情报</span></div>
         <div class="quest-grid" id="questGrid"></div>
@@ -39,7 +39,7 @@
         <div class="section-heading"><div><span class="eyebrow">UNFINISHED CASES</span><h2 id="unsolvedTitle">🕵️ 未解决事件</h2><p class="subtle">那些悬而未决的谜案，又留下了奇怪的脚印……</p></div><span class="count-bubble" id="unsolvedCount">0</span></div>
         <div id="unsolvedList" class="unsolved-list"></div>
       </section>
-      <div class="metrics" aria-label="冒险进度"><div class="metric"><strong id="missionCount">0</strong><span>调查过的事件</span></div><div class="metric"><strong id="masterCount">0</strong><span>真正破解的密码</span></div><div class="metric"><strong id="pendingCount">5</strong><span>等待探索的领域</span></div></div>
+      <div class="metrics" aria-label="冒险进度"><div class="metric"><strong id="missionCount">0</strong><span>独立破解的机关</span></div><div class="metric"><strong id="masterCount">0</strong><span>已掌握的领域</span></div><div class="metric"><strong id="pendingCount">5</strong><span>待攻克的领域</span></div></div>
       <div class="home-footer"><span>🗺️ 事件会变化，冒险记录一直保留</span><button type="button" id="parentOpen" class="plain">⚙️ 家长入口</button></div>
     </section>
 
@@ -71,7 +71,7 @@
           <p id="conceptFeedback" class="concept-feedback" aria-live="polite"></p>
           <button id="closeWorkshop" class="plain">收起机关拼图 ↑</button>
         </section>
-        <div class="support-actions" id="supportActions"><button type="button" id="openWorkshop" class="soft-link">🔧 进入机关维修站</button><button type="button" id="skipQuestion" class="soft-link">这件事先存档</button></div>
+        <div class="support-actions" id="supportActions"><button type="button" id="openWorkshop" class="soft-link">🔧 进入机关维修站</button><button type="button" id="skipQuestion" class="soft-link">这关先放一放</button></div>
         <section id="walkthroughPanel" class="walkthrough hidden" aria-label="一步步拆开线索">
           <div class="walkthrough-header"><strong>📖 小熊的破案笔记</strong><button id="closeWalkthrough" class="plain">收起</button></div>
           <div class="walkthrough-track" aria-hidden="true"><span id="walkthroughDots">● ○ ○</span></div>
@@ -104,7 +104,7 @@
       <h3>恢复备份</h3><p class="subtle">换设备时可手动恢复之前导出的完整备份。此操作会替换本设备现有记录。</p><label class="file-label" for="backupFile">选择备份文件（JSON）</label><input type="file" id="backupFile" accept="application/json,.json"><div class="controls"><button type="button" class="secondary" id="restoreBackup">恢复备份</button></div><p class="summary" id="toolMessage" role="status"></p></details>
     </article></section>
 
-    <footer class="privacy">© 土豆星事件簿 V0.4 预览版 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。本轮进度与输入会自动保存在本机；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
+    <footer class="privacy">© 土豆星事件簿 V0.5 冒险地图版 · 独立静态原型。答题记录只保存在本机浏览器，尚未实现云端同步。本轮进度与输入会自动保存在本机；清除浏览器数据可能丢失记录。请定期导出备份。公开仓库不包含儿童个人资料。</footer>
   </main>
 </body>
 </html>

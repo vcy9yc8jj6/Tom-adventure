@@ -45,7 +45,7 @@ const themes = {
  const BOUNTIES=['天降神秘悬赏','侦探密令已解锁','宝箱正在等待破译'];
 const CHAPTER_TITLES=['失踪的能量核心','奇怪的星际来信','土豆星的终极秘密'];
 const BOSS_REASONS={operators:'外星符号为什么不能当成普通乘号？你是怎样找到计算顺序的？',patterns:'为什么你能这样推算？你能说说数列中相邻两项的关系吗？',weighing:'为什么一次称重最多只能得到三种结果？怎样保证每一种情况都能查下去？',pouring:'倒完水以后，两个桶的水量为什么必须对得上？',pursuit:'为什么同向追赶要看速度差，反向相遇要看速度和？'};
-const MAP_NODES=[{icon:'🚀',name:'飞船启程'},{icon:'🔍',name:'奇怪脚印'},{icon:'🧩',name:'秘密机关'},{icon:'✨',name:'意外事件'},{icon:'👾',name:'BOSS 密令'}];
+const MAP_NODES=[{icon:'🚀',name:'飞船启程'},{icon:'👣',name:'奇怪脚印'},{icon:'⚙️',name:'失控机关'},{icon:'🛸',name:'意外事件'},{icon:'👾',name:'能量守卫 · BOSS'}];
 const STORY_LINES=[
  ['🪐：「我发明了一个绝对不会出错的密码！」','🐻：「可它刚刚把飞船门锁上了……」'],
  ['🪐：「我侦查到脚印了！」「呃，等等，这是我的。」','🐻：「没关系，真正的线索在题目里。」'],
@@ -103,18 +103,18 @@ function setTheme(id){state.theme = themes[id]?id:'potato'; const t=themes[state
     card.addEventListener('click',()=>startAdventure(family));grid.append(card);
   });
   $('unsolvedCount').textContent=String(list.length);const box=$('unsolvedList');box.replaceChildren();
-  if(!list.length){const e=document.createElement('p');e.className='empty-cases';e.textContent='🎉 暂时没有遗留的线索！想挑战的话，悬赏榜里还有五张委托。';box.append(e);return;}
+  if(!list.length){const e=document.createElement('p');e.className='empty-cases';e.textContent='🎉 暂时没有悬而未决的谜案！宇宙悬赏榜还有新的委托。';box.append(e);return;}
   list.forEach(family=>{const a=ADVENTURES[family];const b=document.createElement('button');b.type='button';b.className='unsolved-item';b.textContent=`${a?.icon||'🔎'} ${a?.name||family} · 再查一条线索 →`;b.onclick=()=>startAdventure(family);box.append(b);});
  }
  function refresh(){
   const solvedCount=state.history.filter(r=>r.status==='correct').length;
   const families=[...new Set(allQuestions().map(q=>q.family))];const mastered=families.filter(f=>skill(f).mastered).length;
-  $('missionCount').textContent=state.history.filter(r=>r.status!=='paused').length;
-  $('masterCount').textContent=mastered;$('pendingCount').textContent=families.length-mastered;
+  $('missionCount').textContent=state.history.filter(r=>r.status==='correct'&&r.firstCorrect&&!r.verification).length;
+  $('masterCount').textContent=mastered;$('pendingCount').textContent=families.filter(f=>!skill(f).mastered).length;
   $('levelTag').textContent=solvedCount>=30?'✦ 星系侦探':solvedCount>=10?'✦ 寻宝探员':'✦ 新晋探员';
   const short=state.history.slice(-10);$('startButton').textContent=candidates().length?'开启今日冒险 →':'🌠 探索隐藏彩蛋 →';
   $('dailyNote').textContent=candidates().length?`还有 ${Math.min(5-dailyDone().length,candidates().length)} 件值得调查的事情，先解决重要的就好。`:'🎉 今天没有到期的旧案！想玩可以探索一件隐藏彩蛋。';
-  $('parentStats').textContent=`V0.4 已完成：${solvedCount} 题；最近 ${short.length} 次尝试中，有 ${short.filter(r=>r.firstCorrect).length} 次未查看提示、首次独立答对。已掌握主题：${mastered}/${families.length}。旧版历史记录：${state.legacyHistory.length} 条（保留备份，不用于新版掌握判断）。`;
+  $('parentStats').textContent=`V0.5 已完成：${solvedCount} 题；最近 ${short.length} 次尝试中，有 ${short.filter(r=>r.firstCorrect).length} 次未查看提示、首次独立答对。已掌握主题：${mastered}/${families.length}。旧版历史记录：${state.legacyHistory.length} 条（保留备份，不用于新版掌握判断）。`;
   renderJourneyMap();refreshRepairSignal();
   refreshAdventures();
  }
@@ -123,9 +123,9 @@ function renderJourneyMap(){
  $('journeyHeading').textContent=`🗺️ 第 ${state.journey.chapter} 章 · ${CHAPTER_TITLES[(state.journey.chapter-1)%CHAPTER_TITLES.length]}`;
  const todayDone=Math.min(5,dailyDone().length);
  const stops=Math.max(1,Math.min(5,todayDone+candidates().filter(g=>!dailyDone().some(r=>r.family===g.family)).length));
- const total=Math.min(5,Math.max(todayDone,stops));
+ const total=5; // Five story nodes; unavailable tasks are displayed as dormant rather than hidden.
  MAP_NODES.slice(0,total||1).forEach((original,i)=>{const node=(i===total-1&&total>1)?MAP_NODES[4]:original;
-  const done=i<todayDone,now=i===todayDone;
+  const done=i<todayDone,now=i===todayDone&&candidates().length>0;
   const item=document.createElement('div');item.className='map-stop '+(done?'completed':now?'next':'future')+(i%2?' right':' left');
   const button=document.createElement('button');button.type='button';button.className='map-pin';button.textContent=done?'✓':node.icon;
   button.disabled=!now;button.setAttribute('aria-label',`${i+1} ${node.name} ${done?'已完成':now?'可以继续':'尚未开启'}`);
@@ -133,8 +133,8 @@ function renderJourneyMap(){
   const label=document.createElement('span');label.className='map-stop-label';label.textContent=done?`${node.name} · 通关`:node.name;
   item.append(button,label);grid.append(item);
  });
- $('journeyProgress').textContent=`今日冒险 ${Math.min(todayDone,5)} / ${total||1} · 未到期知识不会强行出题`;
- $('journeyNote').textContent='故事顺着走，知识点按错题和复习日期动态安排。';
+ $('journeyProgress').textContent=`今日航线 ${Math.min(todayDone,5)} / 5 · ${candidates().length?'下一处机关正在等待你':'今天的探险先到这里'}`;
+ $('journeyNote').textContent='飞船的能量核心不见了！土豆星怀疑……是小熊吃掉的？';
  $('coinDisplay').textContent=`🪙 ${state.journey.coins}`;
  $('mapStart').textContent=candidates().length?'继续探险 →':'探索一段彩蛋 →';
 }
@@ -212,7 +212,7 @@ function words(s){return state.theme==='stick'?String(s).replaceAll('土豆星',
   reasonNeeded=!verification && ((mode==='daily' && active.length>=3 && position===active.length-1)||(mode==='topic'&&normalStageNumber===3));
   $('bossPrompt').classList.toggle('hidden',!reasonNeeded);$('bossReason').value='';
   if(reasonNeeded)$('questionTitle').textContent='👾 BOSS · '+(current.title||'最终谜案');
-  $('bossPrompt').querySelector('p').textContent=reasonNeeded?`👾 魔王的附加追问：${BOSS_REASONS[current.family]||'你为什么这样判断？能说说自己的理由吗？'}（目前只保存解释，不会自动评分。）`:'';
+  $('bossPrompt').querySelector('p').textContent=reasonNeeded?`👾 魔王的附加追问：${BOSS_REASONS[current.family]||'你为什么这样判断？能说说自己的理由吗？'}（魔王会收好你的解释，等神秘评审团登场！）`:'';
   $('bossReasonLabel').textContent=BOSS_REASONS[current.family]||'这道题为什么要这样做？用自己的话解释。';
   $('answerInput').value='';$('handwork').value='';$('causeSelect').value='';
   $('verifyQuestion').classList.add('hidden');$('askHint').classList.toggle('hidden',verification);
@@ -292,7 +292,7 @@ function record(status){pauseClock();const e={version:4,mode,verification,questi
    record('correct');
    const questStep=active.slice(0,position+1).filter(q=>!q.verification).length;
    const winNote=mode==='topic'&&!verification?'\n'+(['🎁 第一块藏宝图到手！土豆星开始紧张了……','🗝️ 第二道机关也开了！最后的宝箱在呼唤你！','🏆 三道机关终于走完了！看看谁才是真正的探险家。'][Math.min(questStep-1,2)]):'';
-   revealFeedback((verification?(independent?'🎉 破解成功！这道新题没有提示也做对了。':'✅ 订正成功！这一轮有过错误，暂时不算独立掌握。'):(independent?'🎉 破案成功！没有借助线索也找到了答案。':'🎉 找到密码了！这次有线索帮助，想证明本领可以再挑战一次。'))+winNote+(reasonNeeded&&$('bossReason').value.trim()?'\n📝 你的解释已经保存在本机档案中，目前不自动判定解释是否正确。':''),'success');
+   revealFeedback((verification?(independent?'🎉 破解成功！这道新题没有提示也做对了。':'✅ 订正成功！这一轮有过错误，暂时不算独立掌握。'):(independent?'🎉 漂亮！机关破解成功！土豆星的下巴差点掉下来。':'🎉 密码破解！小熊说：刚才那条线索真管用！'))+winNote+(reasonNeeded&&$('bossReason').value.trim()?'\n📝 你的解释已经保存在本机档案中，目前不自动判定解释是否正确。':''),'success');
    lock();
   }else{
    wrong.push(v);
@@ -403,7 +403,7 @@ function skip(){if(solved)return;record('skipped');next();}
    const mainFinished=main.filter(x=>x.status==='correct').length;
    const solo=roundLog.filter(x=>x.firstCorrect).length;
    $('finishText').textContent=mode==='topic'?`🎁 这份悬赏的 ${main.length} 道机关都调查过啦！其中 ${mainFinished} 道成功破译。${verified?`另外，你还完成了 ${verified} 道无提示奖励验证！`:''}没解开的谜题会进“未解决事件”，以后还能回来挑战。`:
-    `本轮调查了 ${roundLog.length} 件事，破解 ${finished} 件，其中 ${solo} 件是不借助提示、一次独立答对的。`;
+    `🚀 今天探索了 ${main.length} 处机关，成功破解 ${mainFinished} 处！${verified?`另外完成 ${verified} 次秘密验证。`:''}小熊已经准备好庆祝舞步啦！`;
    if(mode==='daily'&&main.length&&state.journey.lastChapterFinish!==today()){state.journey.chapter++;state.journey.lastChapterFinish=today();save();}
    $('trackFill').style.width='100%';refresh();screen('finish');localStorage.removeItem(SESSION);
   }else render();
